@@ -3,7 +3,7 @@
       xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" lang="en" layout:decorate="~{${defaultLayout}}">
 <body>
 <div class="container-fluid">
-    <div layout:fragment="content" th:attr="data-menu-item=${frontendResourceEntity.name}">
+    <div layout:fragment="content" th:attr="data-menu-item='page-builder'">
         <style>
             img.embedded-image {
                 padding: .5rem;
@@ -15,33 +15,170 @@
                 max-height:100%;
                 max-width:100%;
             }
+
+            #dashboard-view {
+                width: 100%;
+                --main-width: calc(96vw - 14rem);
+                --item-height: 140px;
+                --item-gap: 10px;
+            }
+            .dashboard-column {
+                background-color: inherit;
+                display: flex;
+                flex-direction: column;
+                padding: 0px;
+                width: 100%;
+                gap: var(--item-gap);
+            }
+
+            .dashboard-row {
+                background-color: inherit;
+                display: flex;
+                flex-direction: row;
+                padding: 0px;
+                gap: var(--item-gap);
+            }
+
+            .dashboard-item {
+                background-color: inherit;
+                /*border: 1px solid #ccc;*/
+                /*border-radius: 3px;*/
+                /*height: 100%;*/
+                /*max-height: 100%;*/
+                overflow: auto;
+            }
+
+            .dashboard-grid {
+                display: grid;
+                grid-template-columns: repeat(6, 1fr);
+                grid-template-rows: auto;
+                grid-gap: var(--item-gap);
+            }
+
+            .dc-w-1 {max-width: calc(1 * var(--main-width) / 6 );}
+            .dc-w-2 {max-width: calc(2 * var(--main-width) / 6 );}
+            .dc-w-3 {max-width: calc(3 * var(--main-width) / 6 );}
+            .dc-w-4 {max-width: calc(4 * var(--main-width) / 6 );}
+            .dc-w-5 {max-width: calc(5 * var(--main-width) / 6 );}
+            .dc-w-6 {max-width: calc(6 * var(--main-width) / 6 );}
+
+            /*.dc-w-1 {max-width: calc(1 * var(--main-width) / 6 );}*/
+            /*.dc-w-2 {max-width: calc(2 * var(--main-width) / 6 );}*/
+            /*.dc-w-3 {max-width: calc(3 * var(--main-width) / 6 );}*/
+            /*.dc-w-4 {max-width: calc(4 * var(--main-width) / 6 );}*/
+            /*.dc-w-5 {max-width: calc(5 * var(--main-width) / 6 );}*/
+            /*.dc-w-6 {max-width: calc(6 * var(--main-width) / 6 );}*/
+
+            .di-h-1,  .dr-h-1  {height: calc(1  * var(--item-height) + 0  * var(--item-gap));}
+            .di-h-2,  .dr-h-2  {height: calc(2  * var(--item-height) + 1  * var(--item-gap));}
+            .di-h-3,  .dr-h-3  {height: calc(3  * var(--item-height) + 2  * var(--item-gap));}
+            .di-h-4,  .dr-h-4  {height: calc(4  * var(--item-height) + 3  * var(--item-gap));}
+            .di-h-5,  .dr-h-5  {height: calc(5  * var(--item-height) + 4  * var(--item-gap));}
+            .di-h-6,  .dr-h-6  {height: calc(6  * var(--item-height) + 5  * var(--item-gap));}
+            .di-h-7,  .dr-h-7  {height: calc(7  * var(--item-height) + 6  * var(--item-gap));}
+            .di-h-8,  .dr-h-8  {height: calc(8  * var(--item-height) + 7  * var(--item-gap));}
+            .di-h-9,  .dr-h-9  {height: calc(9  * var(--item-height) + 8  * var(--item-gap));}
+            .di-h-10, .dr-h-10 {height: calc(10 * var(--item-height) + 9  * var(--item-gap));}
+            .di-h-11, .dr-h-11 {height: calc(11 * var(--item-height) + 10 * var(--item-gap));}
+            .di-h-12, .dr-h-12 {height: calc(12 * var(--item-height) + 11 * var(--item-gap));}
+            .di-h-13, .dr-h-13 {height: calc(13 * var(--item-height) + 12 * var(--item-gap));}
+            .di-h-14, .dr-h-14 {height: calc(14 * var(--item-height) + 13 * var(--item-gap));}
+            .di-h-15, .dr-h-15 {height: calc(15 * var(--item-height) + 14 * var(--item-gap));}
+            .di-h-16, .dr-h-16 {height: calc(16 * var(--item-height) + 15 * var(--item-gap));}
+            .di-h-17, .dr-h-17 {height: calc(17 * var(--item-height) + 16 * var(--item-gap));}
+            .di-h-18, .dr-h-18 {height: calc(18 * var(--item-height) + 17 * var(--item-gap));}
+            .di-h-19, .dr-h-19 {height: calc(19 * var(--item-height) + 18 * var(--item-gap));}
+            .di-h-20, .dr-h-20 {height: calc(20 * var(--item-height) + 19 * var(--item-gap));}
+
+            .di-h-f {height: auto;}
+
+            .dg-w-1 {grid-template-columns: repeat(1, 1fr);}
+            .dg-w-2 {grid-template-columns: repeat(2, 1fr);}
+            .dg-w-3 {grid-template-columns: repeat(3, 1fr);}
+            .dg-w-4 {grid-template-columns: repeat(4, 1fr);}
+            .dg-w-5 {grid-template-columns: repeat(5, 1fr);}
+            .dg-w-6 {grid-template-columns: repeat(6, 1fr);}
+
         </style>
-        <div id="css-grid"></div>
+        <div id="dashboard-view" class="dashboard-row">
+        </div>
         <script type="text/javascript" th:inline="javascript">
+            function organizeGrid(grid, posFn, sizeFn) {
+                let columns = Array.from(Array(100).keys());
+                let g2 = grid.sort((a,b) => posFn(b) == posFn(a) ? sizeFn(b) - sizeFn(a) : posFn(a) - posFn(b));
+                for (let i in g2) {
+                    let e = g2[i];
+                    if (sizeFn(e) > 1) {
+                        for (let k = posFn(e) + 1; k < posFn(e) + sizeFn(e); k++) {
+                            columns[k] = (columns[k-1] < posFn(e)) ? columns[k-1] : posFn(e);
+                        }
+                    }
+                }
+                let r = {};
+                for (let i in g2) {
+                    let e = g2[i];
+                    if (typeof e === 'number') continue;
+                    let t = columns[posFn(e)];
+                    if (!r[t]) {
+                        r[t] = [];
+                        r[t].gridMin = 100;
+                        r[t].gridMax = 0;
+                    }
+                    r[t].push(e);
+                    if (posFn(e) < r[t].gridMin) r[t].gridMin = posFn(e);
+                    if (posFn(e) + sizeFn(e) > r[t].gridMax) r[t].gridMax = posFn(e) + sizeFn(e);
+                    r[t].gridSize = r[t].gridMax - r[t].gridMin;
+                    r[t].gridSizeDiv = 6 / r[t].gridMax - r[t].gridMin;
+                }
+                return r;
+            }
+
             let items = /*[[${ frontendResourceEntity.content }]]*/ '';
             items = JSON.parse(items);
-            const timestamp = Date.now();
-            let grid = $("#css-grid");
-            for (let k = 0; k < items.length; k++) {
-                let e = items[k];
-                let w = $(e.content);
-                e.x += 1;
-                e.y += 1;
-                w.css("grid-column", e.x + " / span " + e.w);
-                w.css("grid-row", e.y + " / span " + e.h);
-                console.log("grid-column " + e.x + " / " + e.w);
-                console.log("grid-row " + e.y + " / " + e.h);
-                grid.append(w);
+            for (let i in items) {
+                let e = items[i];
+                if (!e.w) e.w = 1;
+                if (!e.h) e.h = 1;
+            }
+
+            let dashboard = $("#dashboard-view");
+
+            let colGrid = organizeGrid(items, a => a.x, a => a.w);
+            for (let i1 in colGrid) {
+                let col1 = $(`<div class='dashboard-column dc-w-${colGrid[i1].gridSize}'/>`);
+                dashboard.append(col1);
+                colGrid[i1] = organizeGrid(colGrid[i1], a => a.y, a => a.h);
+                for (let i2 in colGrid[i1]) {
+                    let row1 = $(`<div class='dashboard-row'/>`);
+                    // let row1 = $(`<div class='dashboard-row dr-h-${colGrid[i1][i2].gridSize}'/>`);
+                    col1.append(row1);
+                    colGrid[i1][i2] = organizeGrid(colGrid[i1][i2], a => a.x, a => a.w);
+                    for (let i3 in colGrid[i1][i2]) {
+                        let col2 = $(`<div class='dashboard-column dc-w-${colGrid[i1][i2][i3].gridSize}'></div>`);
+                        let elem = null;
+                        if (colGrid[i1][i2][i3].length === 1) {
+                            let e = colGrid[i1][i2][i3][0];
+                            let fitHeight = e.fitHeight === true;
+                            elem = fitHeight ? $(`<div class="dashboard-item di-h-f" data-name="${e.name}">${e.content}</div>`) : $(`<div class="dashboard-item di-h-${colGrid[i1][i2][i3][0].h}" data-name="${e.name}">${e.content}</div>`);
+                        } else {
+                            elem = $(`<div class="dashboard-grid dg-w-${colGrid[i1][i2][i3].gridSize}"></div>`);
+                            for (let k = 0; k < colGrid[i1][i2][i3].length; k++) {
+                                let e = colGrid[i1][i2][i3][k];
+                                let fitHeight = e.fitHeight === true;
+                                let w = fitHeight ? $(`<div class="dashboard-item di-h-f" data-name="${e.name}">${e.content}</div>`) : $(`<div class="dashboard-item di-h-${colGrid[i1][i2][i3][k].h}" data-name="${e.name}">${e.content}</div>`);
+                                e.x += 1;
+                                e.y += 1;
+                                w.css("grid-column", (e.x - i3) + " / span " + e.w);
+                                w.css("grid-row", (e.y - i2) + " / span " + e.h);
+                                elem.append(w);
+                            }
+                        }
+                        col2.append(elem);
+                        row1.append(col2);
+                    }
+                }
             }
         </script>
-        <style>
-            div#css-grid {
-                display: grid;
-                grid-template-columns: repeat(12, 1fr);
-                gap: 10px;
-                grid-auto-rows: minmax(100px, auto);
-            }
-        </style>
     </div>
 </div>
 </body>

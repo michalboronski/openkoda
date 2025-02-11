@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2016-2023, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
+Copyright (c) 2016-2024, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation
@@ -22,18 +22,25 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 package com.openkoda.service.export.converter.impl;
 
 import com.openkoda.controller.ComponentProvider;
+import com.openkoda.model.component.ControllerEndpoint;
 import com.openkoda.model.component.FrontendResource;
+import com.openkoda.service.export.ClasspathComponentImportService;
+import com.openkoda.service.export.ClasspathComponentImportService.SyncStatus;
 import com.openkoda.service.export.converter.YamlToEntityConverter;
 import com.openkoda.service.export.converter.YamlToEntityParentConverter;
 import com.openkoda.service.export.dto.ControllerEndpointConversionDto;
 import com.openkoda.service.export.dto.FrontendResourceConversionDto;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Example;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
+import static com.openkoda.service.export.ClasspathComponentImportService.SyncStatus.*;
 import static com.openkoda.service.export.FolderPathConstants.*;
 
 @Component
@@ -43,12 +50,16 @@ public class FrontendResourceYamlToEntityConverter extends ComponentProvider imp
     @Autowired
     ControllerEndpointYamlToEntityConverter controllerEndpointYamlToEntityConverter;
 
+    @Value("${components.export.syncWithFilesystem:false}")
+    private boolean syncWithFilesystem;
+
+
     @Override
     public FrontendResource convertAndSave(FrontendResourceConversionDto dto, String filePath) {
         debug("[convertAndSave]");
         setAccessLevelAndOrgIdFromPath(dto, filePath);
         FrontendResource frontendResource = getFrontendResource(dto);
-        frontendResource.setContent(loadResourceAsString(dto.getContent()));
+        frontendResource.setContent(loadResourceAsString(dto.getContent()));//, syncWithFilesystem));
         repositories.secure.frontendResource.saveOne(frontendResource);
         if(dto.getControllerEndpoints() != null){
             convertControllerEndpoints(dto.getControllerEndpoints(), frontendResource.getId());
@@ -105,6 +116,7 @@ public class FrontendResourceYamlToEntityConverter extends ComponentProvider imp
             frontendResource.setAccessLevel(dto.getAccessLevel());
             frontendResource.setOrganizationId(dto.getOrganizationId());
         }
+        frontendResource.setUserFriendlyName(dto.getUserFriendlyName());
         frontendResource.setIncludeInSitemap(dto.getIncludeInSitemap());
         frontendResource.setRequiredPrivilege(dto.getRequiredPrivilege());
         frontendResource.setType(dto.getType());
@@ -113,4 +125,35 @@ public class FrontendResourceYamlToEntityConverter extends ComponentProvider imp
         frontendResource.setEmbeddable(dto.isEmbeddable());
         return frontendResource;
     }
+
+    @Override
+    public boolean hasContent() {
+        return true;
+    }
+
+    @Override
+
+    public SyncStatus checkSyncStatus(FrontendResourceConversionDto dto) {
+        FrontendResource fr = repositories.unsecure.frontendResource.findByOrganizationIdAndNameAndAccessLevel(
+                dto.getOrganizationId(), dto.getName(), dto.getAccessLevel());
+
+        if (fr == null) {
+            return NEW;
+        }
+
+        boolean same = true;
+        same &= fr.isEmbeddable() == dto.isEmbeddable();
+        same &= fr.getIncludeInSitemap() == dto.getIncludeInSitemap();
+
+        same &= StringUtils.equals(String.valueOf(fr.getUserFriendlyName()), String.valueOf(dto.getUserFriendlyName()));
+        same &= StringUtils.equals(String.valueOf(fr.getRequiredPrivilege()), String.valueOf(dto.getRequiredPrivilege()));
+        same &= StringUtils.equals(String.valueOf(fr.getResourceType()), String.valueOf(dto.getResourceType()));
+        same &= StringUtils.equals(String.valueOf(fr.getType()), String.valueOf(dto.getType()));
+        if (same) {
+            String content = loadResourceAsString(dto.getContent());
+            same = StringUtils.equals(content, fr.getContent());
+        }
+        return same ? UNCHANGED : MODIFIED;
+    }
+
 }

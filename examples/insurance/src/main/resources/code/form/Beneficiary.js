@@ -1,0 +1,6 @@
+a => a.number("beneficiaryId")
+                    .text("firstName")
+                    .text("lastName")
+                    .text("relationship")
+                    .text("contactNumber")
+                    .manyToOne("policyId","policy")

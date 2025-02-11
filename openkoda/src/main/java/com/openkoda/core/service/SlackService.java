@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2016-2023, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
+Copyright (c) 2016-2024, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation
@@ -29,6 +29,7 @@ import com.openkoda.model.task.HttpRequestTask;
 import jakarta.annotation.PostConstruct;
 import jakarta.inject.Inject;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -46,6 +47,7 @@ import java.util.Map;
 public class SlackService extends ComponentProvider {
 
     @Inject
+    @Lazy
     private TemplateEngine templateEngine;
 
     private RestTemplate restTemplate;

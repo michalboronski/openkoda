@@ -1,0 +1,12 @@
+!!com.openkoda.service.export.dto.FrontendResourceConversionDto
+"accessLevel": "ORGANIZATION"
+"content": "templates/frontend-resource/organization/dashboard.html"
+"controllerEndpoints": [
+  ]
+"includeInSitemap": !!bool "false"
+"module": "core"
+"name": "dashboard"
+"organizationId": !!null "null"
+"requiredPrivilege": !!null "null"
+"resourceType": "RESOURCE"
+"type": "HTML"

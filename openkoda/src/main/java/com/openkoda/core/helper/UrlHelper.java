@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2016-2023, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
+Copyright (c) 2016-2024, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software
  and associated documentation files (the "Software"), to deal in the Software without restriction, 
@@ -28,12 +28,14 @@ import com.openkoda.controller.common.URLConstants;
 import com.openkoda.core.multitenancy.TenantResolver;
 import com.openkoda.model.Organization;
 import com.openkoda.model.common.LongIdEntity;
+import com.openkoda.model.component.ControllerEndpoint;
 import com.openkoda.model.component.FrontendResource;
 import com.openkoda.model.component.event.EventListenerEntry;
 import com.openkoda.model.file.File;
 import jakarta.annotation.PostConstruct;
 import jakarta.servlet.http.HttpServletRequest;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.validator.routines.UrlValidator;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Primary;
 import org.springframework.data.domain.PageImpl;
@@ -50,6 +52,9 @@ import java.util.Random;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static org.apache.commons.lang3.StringUtils.substringAfter;
+import static org.apache.commons.lang3.StringUtils.substringBefore;
+
 /**
  * 
  *
@@ -65,6 +70,7 @@ public class UrlHelper implements URLConstants, ReadableCode {
     private final static Random random = new SecureRandom();
 
     private static final Pattern htmlOrganizationPath = Pattern.compile(URLConstants._HTML_ORGANIZATION + "/([0-9]+).*$");
+//    private static final Pattern standardResourcePath = Pattern.compile(URLConstants._HTML + "(" + _ORGANIZATION + "(/[0-9]+)?)?(/.*?)$");
     private static final Pattern mappingKeyPath = Pattern.compile(URLConstants._HTML + "(" + _ORGANIZATION + "/[0-9]+)?/([0-9A-Za-z-_]+)/.*$");
     private static final Pattern organizationIdAndEntityKeyPath = Pattern.compile(URLConstants._HTML + "(" + _ORGANIZATION + "/([0-9]+))?/([0-9A-Za-z-_]+)?(/.*)?$");
 
@@ -77,11 +83,17 @@ public class UrlHelper implements URLConstants, ReadableCode {
     @Value("${logo.image.href.global:/html/organization/all}")
     private String logoImageHrefGlobal;
 
+    @Value("${server.servlet.context-path:}") private String springContext = "";
+
     @PostConstruct void init() {
         instance = this;
     }
 
     public static UrlHelper getInstance() {
+        if(instance == null) {
+            instance = new UrlHelper();
+        }
+        
         return instance;
     }
 
@@ -89,12 +101,17 @@ public class UrlHelper implements URLConstants, ReadableCode {
         return baseUrl;
     }
 
-    public static String getBaseUrlOrEmpty() {
+    public String getContextPath() {
+        return springContext;
+    }
+
+    public String getBaseUrlOrEmpty() {
         return instance == null ? "" : instance.baseUrl;
     }
 
     public String entityBase(Long organizationId, String entityKey) {
-        return organizationId == null || entityKey.equals(ORGANIZATION) ? _HTML + "/" + entityKey : _HTML + _ORGANIZATION + "/" + organizationId + "/" + entityKey;
+        entityKey = NameHelper.toEntityKey(entityKey);
+        return organizationId == null || entityKey.equals(ORGANIZATION) ? springContext + _HTML + "/" + entityKey : springContext + _HTML + _ORGANIZATION + "/" + organizationId + "/" + entityKey;
     }
 
     public String entityBase(String entityKey) {
@@ -107,6 +124,14 @@ public class UrlHelper implements URLConstants, ReadableCode {
 
     public String entityBase(Long organizationId, String entityKey, Long id) {
         return entityBase(organizationId, entityKey) + "/" + id;
+    }
+
+    public String webEndpoint(Long organizationId, String endpointName) {
+        return entityBase(organizationId, CN) + "/" + endpointName;
+    }
+
+    public String webEndpoint(Long organizationId, String endpointName, String subPath) {
+        return entityBase(organizationId, CN) + "/" + endpointName + "/" + subPath;
     }
 
     public String operation(Long organizationId, String entityKey, Long entityId, String operation) {
@@ -181,11 +206,11 @@ public class UrlHelper implements URLConstants, ReadableCode {
 
     //    ORGANIZATION URLS
     public String organizationBase(long id) {
-        return _HTML + _ORGANIZATION + "/" + id;
+        return springContext + _HTML + _ORGANIZATION + "/" + id;
     }
 
     public String base() {
-        return _HTML;
+        return springContext + _HTML;
     }
 
     public String allOrganizations() {
@@ -231,7 +256,7 @@ public class UrlHelper implements URLConstants, ReadableCode {
     }
 
     public String resetPassword() {
-        return _PASSWORD + _RECOVERY;
+        return springContext + _PASSWORD + _RECOVERY;
     }
 
     public String spoof(long id) {
@@ -322,7 +347,7 @@ public class UrlHelper implements URLConstants, ReadableCode {
 
     //TODO
     public String userGlobalModuleSettings(String moduleName, long userId) {
-        return _HTML + _MODULE + "/" + moduleName + _USER + "/" + userId + _SETTINGS;
+        return springContext + _HTML + _MODULE + "/" + moduleName + _USER + "/" + userId + _SETTINGS;
     }
 
     public String organizationModuleBase(String moduleName, long orgId) {
@@ -356,6 +381,24 @@ public class UrlHelper implements URLConstants, ReadableCode {
     }
     public String allFiles() {
         return all(FILE);
+    }
+    public String allDocuments() {
+        return all(DOCUMENT);
+    }
+    public String allDocuments(Long orgId) {
+        return all(orgId, DOCUMENT);
+    }
+    public String allPlaceholders() {
+        return all(DOCUMENT);
+    }
+    public String allPlaceholders(Long orgId) {
+        return all(orgId, PLACEHOLDER);
+    }
+    public String allDocumentTemplates() {
+        return all(TEMPLATE);
+    }
+    public String allDocumentTemplates(Long orgId) {
+        return all(orgId, TEMPLATE);
     }
 
     public String deleteFrontendResource(long frontendResourceId) {
@@ -460,13 +503,13 @@ public class UrlHelper implements URLConstants, ReadableCode {
 //    Admin Dashboard
 
     public String adminDashboard() {
-        return _HTML + _DASHBOARD;
+        return springContext + _HTML + _DASHBOARD;
     }
 
 //    COMPONENTS
 
     public String components() {
-        return _HTML + _COMPONENTS;
+        return springContext + _HTML + _COMPONENTS;
     }
 
 //    SCHEDULER URLS
@@ -499,16 +542,16 @@ public class UrlHelper implements URLConstants, ReadableCode {
 
 //   NOTIFICATIONS
 
-    public String notificationsAll(long userId, Long organizationId){
-        return operation(organizationId, NOTIFICATION, userId, _ALL);
+    public String notificationsAll(Long organizationId){
+        return all(organizationId, NOTIFICATION);
     }
 
-    public String markNotificationsAsRead(long userId, Long organizationId, String unreadNotificationsListString) {
-        return operation(organizationId, NOTIFICATION, userId, _MARK_READ + "?unreadNotifications=" + unreadNotificationsListString);
+    public String markNotificationsAsRead(Long organizationId, String unreadNotificationsListString) {
+        return entityBase(organizationId, NOTIFICATION) + _MARK_READ + "?unreadNotifications=" + unreadNotificationsListString;
     }
 
-    public String markAllNotificationsAsRead(long userId, Long organizationId) {
-        return operation(organizationId, NOTIFICATION, userId, _ALL + _MARK_READ);
+    public String markAllNotificationsAsRead(Long organizationId) {
+        return all(organizationId, NOTIFICATION) + _MARK_READ;
     }
 
 //    SYSTEM HEALTH
@@ -527,7 +570,7 @@ public class UrlHelper implements URLConstants, ReadableCode {
     }
 
     public String affiliationEventAll(long orgId, String searchParam) {
-        return all(orgId, AFFILIATION_EVENT) + "/?obj_search=" + searchParam;
+        return all(orgId, AFFILIATION_EVENT) + "/?" + TABLE_FILTER + "=" + searchParam;
     }
 
     public String getAffiliationLink(String affiliationCode) {
@@ -590,14 +633,24 @@ public class UrlHelper implements URLConstants, ReadableCode {
         return operation(SCHEDULER, id, _EXPORT_YAML);
     }
 
+    public String reloadComponentFromResources() {return operation(COMPONENT, _RELOAD); }
+
     public String integrations() {
         return entityBase(INTEGRATIONS);
+    }
+
+    public String businessParameters() {
+        return all(BUSINESS_PARAMETER);
+    }
+
+    public String businessParameters(Long orgId) {
+        return orgId != null ? all(orgId, BUSINESS_PARAMETER) : businessParameters();
     }
 
 //    AI
 
     public String aiReporting(Long orgId) {
-        return (orgId != null ? organizationBase(orgId) : _HTML) + _CN + "/reporting-report";
+        return (orgId != null ? organizationBase(orgId) : springContext +  _HTML) + _CN + "/reporting-ai";
     }
 
     public String reportPrompt(Long orgId) {
@@ -700,11 +753,11 @@ public class UrlHelper implements URLConstants, ReadableCode {
         return "@{${currentUri}(${qualifier} + '_page' =" + pageParam +" , ${qualifier} + '_size' = ${page.size}, ${qualifier} + '_sort' =" + "${param. " + qualifer + "_sort}, ${qualifier} + '_search' =" + "${param." + qualifer + "_search})}";
     }
 
-    public static String getSearchForParamPrefix(HttpServletRequest request, String paramPrefix) {
+    public String getSearchForParamPrefix(HttpServletRequest request, String paramPrefix) {
         return StringUtils.defaultString(request.getParameter(paramPrefix + "search"));
     }
 
-    public static Pageable getPageableForParamPrefix(HttpServletRequest request, String paramPrefix) {
+    public Pageable getPageableForParamPrefix(HttpServletRequest request, String paramPrefix) {
         int page = Integer.parseInt(StringUtils.defaultIfBlank(request.getParameter(paramPrefix + "page"), "0"));
         int size = Integer.parseInt(StringUtils.defaultIfBlank(request.getParameter(paramPrefix + "size"), "10"));
         String sortString = StringUtils.defaultIfBlank(request.getParameter(paramPrefix + "sort"), "id,DESC");
@@ -718,18 +771,33 @@ public class UrlHelper implements URLConstants, ReadableCode {
     }
 
     public String features() {
-        return "/features";
+        return springContext + "/features";
     }
 
-    public static String getFileURL(File f) {
-        return String.format((f.isPublicFile() ? "" : _HTML) + FILE_ASSET + "%d/%s", f.getId(), encode(f.getFilename()));
+    public String getFileURL(File f) {
+        return String.format("%s%s%d/%s", getContextPath(), (f.isPublicFile() ? "" : _HTML) + _FILE_ASSET, f.getId(), encode(f.getFilename()));
     }
 
     public String getAbsoluteFileURL(File f) {
-        return getBaseUrl() + getFileURL(f);
+        return getBaseUrl().replace(getContextPath(), "") + getFileURL(f);
     }
 
-    public static String encode(String string) {
+    public static boolean isFileURL(String url) {
+        UrlValidator validator = new UrlValidator(UrlValidator.ALLOW_LOCAL_URLS);
+        return url.contains(_FILE_ASSET) || url.matches(".*" + _FILE + "/" + NUMBERREGEX + _CONTENT + "\\z") && validator.isValid(url);
+    }
+
+    public static long extractFileId(String url) {
+        if (url.contains(_FILE_ASSET)) {
+            return Long.parseLong(substringBefore(substringAfter(url, _FILE_ASSET), "/"));
+        } else if (url.matches(".*" + _FILE + "/" + NUMBERREGEX + _CONTENT + "\\z")) {
+            return Long.parseLong(substringBefore(substringAfter(url, _FILE + "/"), _CONTENT));
+        } else {
+            throw new IllegalArgumentException("couldn't extract file id from %s url".formatted(url));
+        }
+    }
+
+    public String encode(String string) {
         return URLEncoder.encode(string, Charset.defaultCharset());
     }
 
@@ -812,6 +880,21 @@ public class UrlHelper implements URLConstants, ReadableCode {
         return accessLevelPath + _CN + "/" + frontendResourceUrl + "?draft=true" + orgIdParam;
     }
 
+    public String getControllerEndpointPreviewUrl(FrontendResource frontendResource, ControllerEndpoint controllerEndpoint) {
+        String accessLevelPath = "";
+        String controllerEndpointPath = StringUtils.isNotBlank(controllerEndpoint.getSubPath()) ? "/" + controllerEndpoint.getSubPath() : "";
+        String orgIdParam = (controllerEndpoint.getOrganizationId() != null ? "&organizationId=" + controllerEndpoint.getOrganizationId() : "");
+
+        if (frontendResource.getAccessLevel().equals(FrontendResource.AccessLevel.GLOBAL)) {
+            accessLevelPath = _HTML;
+        } else if (frontendResource.getAccessLevel().equals(FrontendResource.AccessLevel.ORGANIZATION)) {
+            accessLevelPath = _HTML_ORGANIZATION + (controllerEndpoint.getOrganizationId() != null ? "/" + controllerEndpoint.getOrganizationId() : "");
+            orgIdParam = "";
+        }
+
+        return accessLevelPath + _CN + "/" + frontendResource.getName() + controllerEndpointPath + "?draft=true" + orgIdParam;
+    }
+
     public String getUiComponentSettingsUrl(Long organizationId, Long frontendResourceId) {
         return baseUrl +
                 (organizationId == null ? _HTML + _WEBENDPOINT : _HTML_ORGANIZATION + "/" + organizationId + _WEBENDPOINT)
@@ -820,7 +903,8 @@ public class UrlHelper implements URLConstants, ReadableCode {
 
     public String getFrontendResourcePreviewUrl(FrontendResource frontendResource, boolean draft, boolean resource) {
         String accessLevelPath = "";
-        String uiComponentPath = frontendResource.getResourceType().equals(FrontendResource.ResourceType.UI_COMPONENT) ? _CN : "";
+        String uiComponentPath = frontendResource.getResourceType().equals(FrontendResource.ResourceType.UI_COMPONENT)
+                || frontendResource.getResourceType().equals(FrontendResource.ResourceType.RESOURCE) ? _CN : "";
 
         if (frontendResource.getAccessLevel().equals(FrontendResource.AccessLevel.GLOBAL)) {
             accessLevelPath = _HTML;
@@ -828,8 +912,7 @@ public class UrlHelper implements URLConstants, ReadableCode {
             accessLevelPath = _HTML_ORGANIZATION + (frontendResource.getOrganizationId() != null ? "/" + frontendResource.getOrganizationId() : "");
         }
 
-        return accessLevelPath + uiComponentPath + "/" + frontendResource.getName()
-                + (StringUtils.isEmpty(uiComponentPath) ? (draft ? "?draft" : "") + (resource ? "?resource" : "") : "");
+        return accessLevelPath + uiComponentPath + "/" + frontendResource.getName() + (draft ? "?draft" : "") + (resource ? "?resource" : "");
     }
 
 }

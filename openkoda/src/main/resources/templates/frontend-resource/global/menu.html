@@ -6,14 +6,25 @@
 <body>
 <div th:fragment="users-menu">
     <th:block th:if="${organizationEntity != null
-            and (#strings.contains(currentUri,'organization') and !#strings.contains(currentUri,'organization/all'))}">
-
+            and (#strings.contains(currentUri,'organization')
+            and !#strings.contains(currentUri,'organization/all'))}">
         <li class="nav-item">
             <a th:attr="data-sidebar-menu-item='dashboard'" class="nav-link" th:href="${@url.organizationDashboard(organizationEntity.id)}" onclick="app.adminMode(false)"><span th:text="#{template.dashboard}">Dashboard</span></a>
-            <th:block th:if="${@auth.hasGlobalOrOrgPrivilege('canReadReports',organizationEntity.id)}">
-                <a th:attr="data-sidebar-menu-item='reports'" th:if="${@auth.hasGlobalOrOrgPrivilege('canReadReports',organizationEntity.id)}" class="nav-link" th:href="${@url.allQueryReports(organizationEntity.id)}" onclick="app.adminMode(false)"><span th:text="#{template.reports}">Reports</span></a>
-                <a th:attr="data-sidebar-menu-item='reporting-ai'" th:if="${@auth.hasGlobalOrOrgPrivilege('canUseReportingAI',organizationEntity.id) and #arrays.contains(@environment.getActiveProfiles(),'development')}" class="nav-link" th:href="${@url.aiReporting(organizationEntity.id)}" onclick="app.adminMode(false)"><span th:text="#{template.reportingAi}">Reporting AI</span></a>
+            <th:block th:if="${@auth.hasGlobalOrOrgPrivilege('canUseDocumentGenerator',organizationEntity.id)}">
+                <a th:if="${#arrays.contains(@environment.getActiveProfiles(),'documents')}" th:attr="data-sidebar-menu-item='documents'" class="nav-link" th:href="${@url.allDocuments(organizationEntity.id)}" onclick="app.adminMode(false)">
+                    <span th:text="#{template.documentGeneration}">Documents</span>
+                </a>
             </th:block>
+            <th:block th:if="${@auth.hasGlobalOrOrgPrivilege('canReadReports',organizationEntity.id)}">
+                <a th:attr="data-sidebar-menu-item='reports'" th:if="${!#arrays.contains(@environment.getActiveProfiles(),'development')}" class="nav-link" th:href="${@url.allQueryReports(organizationEntity.id)}" onclick="app.adminMode(false)"><span th:text="#{template.reports}">Reports</span></a>
+                <a th:attr="data-sidebar-menu-item='reports'" th:if="${@auth.hasGlobalOrOrgPrivilege('canUseReportingAI',organizationEntity.id) and #arrays.contains(@environment.getActiveProfiles(),'development')}" class="nav-link" th:href="${@url.aiReporting(organizationEntity.id)}" onclick="app.adminMode(false)"><span th:text="#{template.reportingAi}">Reporting AI</span></a>
+            </th:block>
+            <th:block th:if="${@auth.hasGlobalOrOrgPrivilege('manageOrgData',organizationEntity.id)}">
+                <a th:attr="data-sidebar-menu-item='business-parameters'" class="nav-link" th:href="${@url.businessParameters(organizationEntity.id)}" onclick="app.adminMode(false)"><span th:text="#{template.businessParameters}">Business</span></a>
+            </th:block>
+            <a class="nav-link" th:attr="data-sidebar-menu-item='page-builder'" th:href="${@url.allPageBuilder()}">
+                <span th:text="#{template.pageBuilder}">Dashboard Builder</span>
+            </a>
             <th:block th:each="entry : ${@htmlCRUDControllerConfigurationMap.getExposedSorted(organizationEntity.id)}">
                 <a th:attr="data-sidebar-menu-item=${@url.all(organizationEntity.id, entry.key)}" th:if="${@auth.hasGlobalOrOrgPrivilege('readOrgData',organizationEntity.id)}"
                    class="nav-link" th:href="${@url.all(organizationEntity.id, entry.key)}" onclick="app.adminMode(false)"><span th:text="${@messages.getFieldLabel(entry.key, entry.value.getFrontendMappingDefinition().name)}">Entry</span></a>
@@ -24,6 +35,54 @@
 
     </th:block>
 
+    <th:block th:if="${@auth.canSeeAdminPanel()
+            and (!#strings.contains(currentUri,'organization')
+            or #strings.contains(currentUri,'organization/all')
+            or #strings.contains(currentUri,'organization/new/settings'))}" >
+        <li class="nav-item">
+            <a class="nav-link" th:attr="data-sidebar-menu-item='admin-dashboard'" th:if="${@auth.hasGlobalPrivilege('canReadBackend')}" th:href="${@url.adminDashboard()}">
+                <span th:text="#{template.dashboard}">Dashboard</span>
+            </a>
+            <th:block th:if="${@auth.hasGlobalOrOrgPrivilege('canUseDocumentGenerator',organizationEntityId)}">
+                <a th:if="${#arrays.contains(@environment.getActiveProfiles(),'documents')}" class="nav-link" th:attr="data-sidebar-menu-item='documents'" th:href="${@url.allDocuments()}">
+                    <span th:text="#{template.documentGeneration}">Documents</span>
+                </a>
+            </th:block>
+            <th:block th:if="${@auth.hasGlobalOrOrgPrivilege('canReadReports',organizationEntityId)}">
+                <a class="nav-link" th:attr="data-sidebar-menu-item='reports'" th:if="${!#arrays.contains(@environment.getActiveProfiles(),'development')}" th:href="${@url.allQueryReports(null)}">
+                    <span th:text="#{template.reports}">Reports</span>
+                </a>
+                <a class="nav-link" th:attr="data-sidebar-menu-item='reports'" th:if="${@auth.hasGlobalOrOrgPrivilege('canUseReportingAI',organizationEntityId) and #arrays.contains(@environment.getActiveProfiles(),'development')}" th:href="${@url.aiReporting(organizationEntityId)}" onclick="app.adminMode(false)">
+                    <span th:text="#{template.reportingAi}">Reporting AI</span>
+                </a>
+            </th:block>
+            <th:block th:if="${@auth.hasGlobalOrOrgPrivilege('manageOrgData',organizationEntityId)}">
+                <a class="nav-link" th:attr="data-sidebar-menu-item='business-parameters'" th:href="${@url.businessParameters(organizationEntityId)}" onclick="app.adminMode(false)">
+                    <span th:text="#{template.businessParameters}">Business</span>
+                </a>
+            </th:block>
+            <a class="nav-link" th:attr="data-sidebar-menu-item='page-builder'" th:href="${@url.allPageBuilder()}">
+                <span th:text="#{template.pageBuilder}">Dashboard Builder</span>
+            </a>
+            <th:block th:if="${@auth.hasGlobalOrOrgPrivilege('canUseReportingAI',organizationEntityId) and #arrays.contains(@environment.getActiveProfiles(),'development')}">
+                <a class="nav-link" th:attr="data-sidebar-menu-item='development'" th:href="${@url.allForm()}">
+                    <span th:text="#{template.development}">Development Kit</span>
+                </a>
+            </th:block>
+            <a class="nav-link" th:attr="data-sidebar-menu-item='configuration'" th:href="${@url.allFiles()}">
+                <span th:text="#{template.configuration}">X</span>
+            </a>
+            <a class="nav-link" th:attr="data-sidebar-menu-item='security'" th:href="${@url.users()}">
+                <span th:text="#{template.security}">Security</span>
+            </a>
+            <a class="nav-link" th:attr="data-sidebar-menu-item='automation'" th:href="${@url.allSchedulers()}">
+                <span th:text="#{template.automation}">Automation</span>
+            </a>
+            <a class="nav-link" th:attr="data-sidebar-menu-item='logs'" th:href="${@url.allAudit()}">
+                <span th:text="#{template.logMonitoring}">Log Monitoring</span>
+            </a>
+        </li>
+    </th:block>
 </div>
 
 </body>

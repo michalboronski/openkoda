@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2016-2023, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
+Copyright (c) 2016-2024, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation
@@ -48,10 +48,11 @@ public class FileForm extends AbstractOrganizationRelatedEntityForm<FileDto, Fil
 
     @Override
     protected File populateTo(File entity) {
-        
+
         entity.setFilename(getSafeValue(entity.getFilename(), FileFrontendMappingDefinitions.FILENAME_));
         entity.setPublicFile(getSafeValue(entity.isPublicFile(), FileFrontendMappingDefinitions.PUBLIC_FILE_));
         entity.setContentType(getSafeValue(entity.getContentType(), FileFrontendMappingDefinitions.CONTENT_TYPE_));
+
         return entity;
     }
 

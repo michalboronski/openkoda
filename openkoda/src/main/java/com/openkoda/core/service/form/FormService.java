@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2016-2023, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
+Copyright (c) 2016-2024, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software
  and associated documentation files (the "Software"), to deal in the Software without restriction,
@@ -30,10 +30,11 @@ import com.openkoda.core.form.AbstractForm;
 import com.openkoda.core.form.CRUDControllerConfiguration;
 import com.openkoda.core.form.FrontendMappingDefinition;
 import com.openkoda.core.helper.ClusterHelper;
-import com.openkoda.core.multitenancy.MultitenancyService;
 import com.openkoda.core.repository.common.ScopedSecureRepository;
 import com.openkoda.core.security.HasSecurityRules;
 import com.openkoda.core.service.event.ClusterEventSenderService;
+import com.openkoda.core.service.event.CustomApplicationEvent;
+import com.openkoda.core.service.event.EntityApplicationEvent;
 import com.openkoda.model.common.SearchableRepositoryMetadata;
 import com.openkoda.model.component.Form;
 import com.openkoda.model.component.FrontendResource;
@@ -43,11 +44,9 @@ import jakarta.inject.Inject;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import static com.openkoda.core.helper.NameHelper.toEntityKey;
 import static com.openkoda.core.service.FrontendResourceService.frontendResourceTemplateNamePrefix;
@@ -61,9 +60,6 @@ public class FormService extends ComponentProvider implements HasSecurityRules {
 
     @Inject
     private ClusterEventSenderService clusterEventSenderService;
-
-    @Inject
-    private MultitenancyService multitenancyService;
     /**
      * Unregister and register the updated form again
      * @param formId
@@ -119,9 +115,6 @@ public class FormService extends ComponentProvider implements HasSecurityRules {
         }
         List<Form> all = repositories.unsecure.form.findAll();
         all.forEach(this::registerForm);
-        if(MultitenancyService.isMultitenancy()) {
-            multitenancyService.addTenantedTables(all.stream().map(Form::getTableName).collect(Collectors.toList()));
-        }
     }
 
     /**
@@ -197,6 +190,12 @@ public class FormService extends ComponentProvider implements HasSecurityRules {
                 services.customisation.unregisterAuditableClass(repositoryMetadata.entityClass());
             }
 
+            ///if(form.isRegisterWithEvents()) {
+            ///    services.customisation.registerWithEvents((Class) repositoryMetadata.entityClass(), repositoryMetadata.entityKey());
+            ///} else {
+            ///    services.customisation.unregisterWithEvents(repositoryMetadata.entityClass());
+            ///}
+            
             if (form.isRegisterHtmlCrudController()) {
                 CRUDControllerConfiguration crudControllerConfiguration = services.customisation.registerHtmlCrudController(formFieldDefinitionBuilder, repository, form.getReadPrivilege(), form.getWritePrivilege())
                         .setGenericTableFields(form.getTableColumnsList())
@@ -208,6 +207,16 @@ public class FormService extends ComponentProvider implements HasSecurityRules {
             if (form.isRegisterApiCrudController()) {
                 services.customisation.registerApiCrudController(formFieldDefinitionBuilder, repository, form.getReadPrivilege(), form.getWritePrivilege());
             }
+            
+            List<CustomApplicationEvent> customEntityEvents = services.customEventService.findCustomEvents(repositoryMetadata.entityKey(), repositoryMetadata.entityClass());
+            info("[registerForm] Entity Events for [{}] to register : [{}]", repositoryMetadata.entityKey(), customEntityEvents.size());
+            if(customEntityEvents != null) {
+                customEntityEvents.stream().map( c -> (EntityApplicationEvent<?>)c)
+                    .forEach( customEntityEvent -> 
+                        services.customEventService.registerEntityEvent(repositoryMetadata.entityKey(), repositoryMetadata.entityClass(), customEntityEvent.getEventCategory()));
+            }
+            
+            repositoryMetadata.annotationType();
             return true;
         }
         return false;
@@ -215,7 +224,6 @@ public class FormService extends ComponentProvider implements HasSecurityRules {
 
     private boolean unregisterForm(Form form) {
         debug("[unregisterForm]");
-        multitenancyService.removeTenantedTables(Collections.singletonList(form.getTableName()));
         services.customisation.unregisterFrontendMapping(form.getName());
         services.customisation.unregisterHtmlCrudController(form.getName().toLowerCase());
         services.customisation.unregisterApiCrudController(form.getName().toLowerCase());

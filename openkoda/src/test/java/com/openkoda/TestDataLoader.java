@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2016-2023, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
+Copyright (c) 2016-2024, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation
@@ -234,7 +234,7 @@ public class TestDataLoader extends BaseDatabaseInitializer {
                 createEventListenerEntry("com.openkoda.core.service.event.ApplicationEvent", "SCHEDULER_EXECUTED", "com.openkoda.dto.system.ScheduledSchedulerDto", "com.openkoda.core.service.BackupService", "doFullBackup");
             }
             if (numberOfTestRecords > 1) {
-                createEventListenerEntry("com.openkoda.core.service.event.ApplicationEvent", "USER_CREATED", "com.openkoda.dto.user.BasicUser", "com.openkoda.core.service.email.EmailService", "sendAndSaveEmail", "com.openkoda.dto.CanonicalObject", "test", "test@test.com", null, null);
+                createEventListenerEntry("com.openkoda.core.service.event.ApplicationEvent", "USER_CREATED", "com.openkoda.dto.user.BasicUserDto", "com.openkoda.core.service.email.EmailService", "sendAndSaveEmail", "com.openkoda.dto.CanonicalObject", "test", "test@test.com", null, null);
             }
             return;
         }

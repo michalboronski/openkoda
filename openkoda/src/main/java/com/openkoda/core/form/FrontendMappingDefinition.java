@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2016-2023, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
+Copyright (c) 2016-2024, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation
@@ -21,6 +21,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 package com.openkoda.core.form;
 
+import com.openkoda.core.helper.NameHelper;
 import com.openkoda.model.PrivilegeBase;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -37,6 +38,7 @@ public class FrontendMappingDefinition {
     public final FrontendMappingFieldDefinition[] fields;
     public final String name;
     public final String formLabel;
+    public final String formDescriptionSqlFormula;
 
     public final Tuple2<FrontendMappingFieldDefinition, Function<Object, String>>[] fieldValidators;
     public final Function<? extends Form, Map<String, String>>[]  formValidators;
@@ -49,12 +51,13 @@ public class FrontendMappingDefinition {
      * @param name a {@link java.lang.String} dto.
      * @param fields an array of {@link FrontendMappingFieldDefinition} objects.
      */
-    public FrontendMappingDefinition(String name, FrontendMappingFieldDefinition[] fields, Tuple2<FrontendMappingFieldDefinition, Function<Object, String>>[] fieldValidators, Function<? extends AbstractForm, Map<String, String>>[] formValidators) {
+    public FrontendMappingDefinition(String name, FrontendMappingFieldDefinition[] fields, Tuple2<FrontendMappingFieldDefinition, Function<Object, String>>[] fieldValidators, Function<? extends AbstractForm, Map<String, String>>[] formValidators, String formDescriptionSqlFormula) {
         this.name = name;
         this.fields = fields;
         this.fieldValidators = fieldValidators;
         this.formValidators = formValidators;
         this.formLabel = name + ".label";
+        this.formDescriptionSqlFormula = formDescriptionSqlFormula;
     }
 
     public static FrontendMappingDefinition createFrontendMappingDefinition(
@@ -63,7 +66,7 @@ public class FrontendMappingDefinition {
             PrivilegeBase defaultWritePrivilege,
             Function<FormFieldDefinitionBuilderStart, FormFieldDefinitionBuilder> builder) {
         FormFieldDefinitionBuilder ffdb = builder.apply(new FormFieldDefinitionBuilder(formName, defaultReadPrivilege, defaultWritePrivilege));
-        return new FrontendMappingDefinition(formName, ffdb.getFieldsAsArray(), ffdb.getFieldValidatorsAsArray(), ffdb.getFormValidatorsAsArray());
+        return new FrontendMappingDefinition(formName, ffdb.getFieldsAsArray(), ffdb.getFieldValidatorsAsArray(), ffdb.getFormValidatorsAsArray(), ffdb.entityDescriptionSqlFormula);
     }
 
     public static FrontendMappingDefinition createFrontendMappingDefinition(
@@ -73,7 +76,7 @@ public class FrontendMappingDefinition {
             FrontendMappingFieldDefinition[] baseFormFields,
             Function<FormFieldDefinitionBuilderStart, FormFieldDefinitionBuilder> builder) {
         FormFieldDefinitionBuilder ffdb = builder.apply(new FormFieldDefinitionBuilder(formName, defaultReadPrivilege, defaultWritePrivilege));
-        return new FrontendMappingDefinition(formName, ArrayUtils.addAll(baseFormFields, ffdb.getFieldsAsArray()), ffdb.getFieldValidatorsAsArray(), ffdb.getFormValidatorsAsArray());
+        return new FrontendMappingDefinition(formName, ArrayUtils.addAll(baseFormFields, ffdb.getFieldsAsArray()), ffdb.getFieldValidatorsAsArray(), ffdb.getFormValidatorsAsArray(), ffdb.entityDescriptionSqlFormula);
     }
 
     /**
@@ -93,9 +96,15 @@ public class FrontendMappingDefinition {
         return Arrays.stream(fields).filter(field -> types.contains(field.getType())).map(FrontendMappingFieldDefinition::getPlainName).collect(Collectors.toList());
     }
 
-    public FrontendMappingFieldDefinition[] getDbTypeFields(){
+    public FrontendMappingFieldDefinition[] getDbTypeFieldsExplicitlyDefined(){
         return Arrays.stream(getFields())
                 .filter(s -> s.getType() != null && s.getType().getDbType() != null)
+                .toArray(FrontendMappingFieldDefinition[]::new);
+    }
+
+    public FrontendMappingFieldDefinition[] getDbTypeFieldsImplicitlyDefined(){
+        return Arrays.stream(getFields())
+                .filter(s -> s.getType() != null && s.getType().getDbType() != null || s.getType() == FieldType.one_to_many)
                 .toArray(FrontendMappingFieldDefinition[]::new);
     }
 
@@ -113,18 +122,29 @@ public class FrontendMappingDefinition {
                 .toArray(String[]::new);
     }
 
+    public List<FrontendMappingFieldDefinition> getValuedTypeFields(){
+        return Arrays.stream(getFields())
+                .filter(s -> s.getType() != null && s.getType().hasValue())
+                .toList();
+    }
+
     public FrontendMappingFieldDefinition findField(String fieldName) {
         for (FrontendMappingFieldDefinition f : fields) {
             if (f.getPlainName().equals(fieldName)) {
                 return f;
             } else if (f.getType().equals(FieldType.many_to_one) && fieldName.contains(".") && (StringUtils.substringBefore(fieldName, ".") + "Id").equals(f.getPlainName())) {
-                return FrontendMappingFieldDefinition.createFormFieldDefinition(name, fieldName, FieldType.text, f.readPrivilege, f.writePrivilege);
+                return new FrontendMappingFieldDefinitionBuilder()
+                        .createFrontendMappingDefinitionBase(name, fieldName, FieldType.text, f.readPrivilege, f.writePrivilege)
+                        .createFrontendMappingFieldDefinition();
+//gigamerge
+//                String referencedEntityKey = fieldName.split("\\.")[0];
+//                return FrontendMappingFieldDefinition.createFormFieldDefinition(name, fieldName, FieldType.many_to_one, f.readPrivilege, f.writePrivilege, null, referencedEntityKey);
             }
         }
         return null;
     }
 
     public String getMappingKey() {
-        return name.toLowerCase();
+        return NameHelper.toEntityKey(name.toLowerCase());
     }
 }

@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2016-2023, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
+Copyright (c) 2016-2024, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated 
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation 
@@ -24,9 +24,14 @@ package com.openkoda.core.customisation;
 import com.openkoda.controller.ComponentProvider;
 import com.openkoda.controller.common.PageAttributes;
 import com.openkoda.core.flow.PageModelMap;
+import com.openkoda.core.flow.form.JsResultAndModel;
+import com.openkoda.core.flow.parameters.BusinessParametersMap;
+import com.openkoda.core.security.UserProvider;
 import com.openkoda.dto.system.ScheduledSchedulerDto;
 import com.openkoda.model.component.ServerJs;
-import org.apache.commons.collections.CollectionUtils;
+import com.openkoda.uicomponent.live.LiveComponentProvider;
+import jakarta.annotation.PostConstruct;
+import jakarta.inject.Inject;
 import org.apache.commons.io.output.NullWriter;
 import org.apache.commons.lang3.StringUtils;
 import org.graalvm.polyglot.Context;
@@ -37,15 +42,27 @@ import org.springframework.stereotype.Service;
 import java.io.IOException;
 import java.io.Writer;
 import java.time.LocalDateTime;
-import java.util.*;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 
 /**
  * This class creates a Consumer that can execute JS scripts created as FrontendResources.
  */
 @Service
 public class ServerJSRunner extends ComponentProvider {
+
+    @Inject
+    LiveComponentProvider componentProvider;
+
+    @Inject
+    BusinessParametersMap businessParameters;
+
+    @PostConstruct
+    public void init() {
+        componentProvider.system.setServerJSRunner(this);
+    }
 
     /**
      * Context of the script engine.
@@ -72,7 +89,7 @@ public class ServerJSRunner extends ComponentProvider {
             //we create temporary serverJs instance to deserialize model into map
             //that can be improved
             ServerJs serverJs = new ServerJs(script, model, arguments);
-            return evaluateScript(script, serverJs.getModelMap(), Object.class, log);
+            return evaluateScript(script, serverJs.getModelMap(), Arrays.asList(StringUtils.split(serverJs.getArguments(), "\n")), Object.class, log);
         } catch (Exception e) {
             return Collections.singletonMap(PageAttributes.error.name, e.getMessage());
         } finally {
@@ -95,7 +112,12 @@ public class ServerJSRunner extends ComponentProvider {
             return null;
         }
         ServerJs serverJs = repositories.unsecure.serverJs.findByName(serverJsName);
-        return evaluateServerJsScript(serverJs, null, Arrays.asList(schedulerData, serverJsName, argument1, argument2), Object.class);
+        try {
+            UserProvider.setCronJobAuthentication();
+            return evaluateServerJsScript(serverJs, null, Arrays.asList(schedulerData, serverJsName, argument1, argument2), Object.class);
+        } finally {
+            UserProvider.clearAuthentication();
+        }
     }
 
     /**
@@ -139,10 +161,7 @@ public class ServerJSRunner extends ComponentProvider {
             if (externalModel != null) {
                 map.putAll(externalModel);
             }
-            if (CollectionUtils.isNotEmpty(externalArguments)) {
-                map.put(arguments, externalArguments);
-            }
-            return evaluateScript(script, map, resultType, null);
+            return evaluateScript(script, map, externalArguments, resultType, null);
         } catch (Exception e) {
             error(e, "[evaluateServerJsScript] When evaluating {} : {}", serverJs.getName(),
                     e.getCause() != null ? e.getCause().getMessage() : e.getMessage());
@@ -152,7 +171,8 @@ public class ServerJSRunner extends ComponentProvider {
 
 
     //TODO: this method is to be redesigned
-    private <T> T evaluateScript(String script, Map<String, Object> bindings, Class<T> resultType, Writer log) {
+    private <T> T evaluateScript(String script, Map<String, Object> bindings, List<String> externalArguments, Class<T> resultType, Writer log) {
+        
         Context c = contextBuilder.build();
         Value b = c.getBindings("js");
         for (Map.Entry<String, Object> o : bindings.entrySet()) {
@@ -161,9 +181,18 @@ public class ServerJSRunner extends ComponentProvider {
         for (Map.Entry<String, Object> o : ComponentProvider.resources.entrySet()) {
             b.putMember(o.getKey(), o.getValue());
         }
+        b.putMember("context", JsResultAndModel.constructNew(componentProvider, null, businessParameters, null, null));
+        b.putMember("arguments", externalArguments);
         b.putMember("model", bindings);
         b.putMember("process", new ServerJSProcessRunner(services, log == null ? new NullWriter() : log));
-        T result = c.eval("js", script).as(resultType);
+        T result = null;
+        try {
+            result = c.eval("js", script).as(resultType);
+        } catch (Throwable e) {
+            System.err.println(String.format("Error [%s] when evaluating [%s]", e.getMessage(), script) );
+            throw e;
+        }
+        
         return result;
     }
 

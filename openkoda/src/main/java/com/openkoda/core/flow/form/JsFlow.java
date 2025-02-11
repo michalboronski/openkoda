@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2016-2023, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
+Copyright (c) 2016-2024, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation
@@ -25,8 +25,12 @@ import com.openkoda.core.flow.Flow;
 import com.openkoda.core.flow.PageModelMap;
 import com.openkoda.core.flow.ResultAndModel;
 import com.openkoda.core.flow.TransactionalExecutor;
+import com.openkoda.core.flow.parameters.BusinessParametersMap;
+import com.openkoda.core.flow.parameters.RequestParametersMap;
 import com.openkoda.core.form.AbstractOrganizationRelatedEntityForm;
+import com.openkoda.core.helper.ApplicationContextProvider;
 
+import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -36,23 +40,23 @@ public class JsFlow<I, O, CP> extends Flow<I, O, CP> {
 
     private final AbstractOrganizationRelatedEntityForm form;
 
-    protected JsFlow(Map<String, Object> params, CP services, Function<ResultAndModel<I, CP>, O> f, Supplier<TransactionalExecutor> transactionalExecutorProvider, Consumer<Function> onThen, AbstractOrganizationRelatedEntityForm form) {
-        super(params, services, f, transactionalExecutorProvider, onThen);
+    protected JsFlow(RequestParametersMap params, BusinessParametersMap businessProperties, List<String> arguments, CP services, Function<ResultAndModel<I, CP>, O> f, Supplier<TransactionalExecutor> transactionalExecutorProvider, Consumer<Function> onThen, AbstractOrganizationRelatedEntityForm form) {
+        super(params, businessProperties, arguments, services, f, transactionalExecutorProvider, onThen);
         this.form = form;
     }
 
     @Override
-    protected <II, IO, ICP> Flow<II, IO, ICP> constructFlow(Map<String, Object> params, ICP services, Function<ResultAndModel<II, ICP>, IO> f, Supplier<TransactionalExecutor> transactionalExecutorProvider, Consumer<Function> onThen) {
-        return new JsFlow(params, services, f, transactionalExecutorProvider, onThen, form);
+    protected <II, IO, ICP> Flow<II, IO, ICP> constructFlow(RequestParametersMap params, BusinessParametersMap businessProperties, List<String> arguments, ICP services, Function<ResultAndModel<II, ICP>, IO> f, Supplier<TransactionalExecutor> transactionalExecutorProvider, Consumer<Function> onThen) {
+        return new JsFlow(params, businessProperties, arguments, services, f, transactionalExecutorProvider, onThen, form);
     }
 
     @Override
-    protected <IR, ICP> ResultAndModel<IR, ICP> constructResultAndModel(PageModelMap model, IR result, ICP services, Map<String, Object> params) {
-        return new JsResultAndModel<>(model, result, services, params, form);
+    protected <IR, ICP> ResultAndModel<IR, ICP> constructResultAndModel(PageModelMap model, IR result, ICP services, RequestParametersMap params, BusinessParametersMap businessProperties, List<String> arguments) {
+        return new JsResultAndModel<>(model, result, services, params, businessProperties, form, arguments);
     }
 
-    public static <A, CP> Flow<A, A, CP> init(CP services, Map params, AbstractOrganizationRelatedEntityForm form) {
-        return new JsFlow<>(initParamsMap(params), services, a->a.result, null, null, form);
+    public static <A, CP> Flow<A, A, CP> init(CP services, Map params, List<String> arguments, AbstractOrganizationRelatedEntityForm form) {
+        return new JsFlow<>(initParamsMap(params), ApplicationContextProvider.getContext().getBean(BusinessParametersMap.class), arguments, services, a->a.result, null, null, form);
     }
 
 }

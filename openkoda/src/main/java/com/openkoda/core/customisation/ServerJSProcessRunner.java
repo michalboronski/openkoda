@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2016-2023, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
+Copyright (c) 2016-2024, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation
@@ -26,6 +26,7 @@ import com.openkoda.core.flow.mbean.LoggingEntriesStack;
 import com.openkoda.core.service.event.ApplicationEvent;
 import com.openkoda.dto.ServerJsThreadDto;
 import com.openkoda.service.Services;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.output.NullWriter;
 
 import java.io.*;
@@ -69,8 +70,7 @@ public class ServerJSProcessRunner implements LoggingComponent {
     /**
      * All running ServerJs threads.
      */
-    //TODO: make private or package
-    public static final Map<Thread, LoggingEntriesStack<String>> serverJsThreads = new LinkedHashMap<>();
+    private static final Map<Thread, LoggingEntriesStack<String>> serverJsThreads = new LinkedHashMap<>();
 
     public static Map<ServerJsThreadDto,LoggingEntriesStack<String>> getServerJsThreads(){
         Map<ServerJsThreadDto,LoggingEntriesStack<String>> map = new HashMap<>();
@@ -278,6 +278,23 @@ public class ServerJSProcessRunner implements LoggingComponent {
     }
 
     /**
+     * Runs system command with piped inputStream and returns the standard output as stream.
+     * @param command linux command
+     */
+    public static InputStream commandToInputStream(String command, InputStream inputStream) {
+        Process process = null;
+        try {
+            process = startProcess(command, inputStream);
+            return process.getInputStream();
+        } catch (IOException e) {
+            if (process != null) {
+                process.destroy();
+            }
+            return null;
+        }
+    }
+
+    /**
      * Runs system command and waits for completion and returns the standard output as byte array.
      * This should not be used for commands that might produce large outputs.
      * @param command linux command
@@ -370,19 +387,28 @@ public class ServerJSProcessRunner implements LoggingComponent {
      * On Windows, the command is attempted to be executed under bash in WSL.
      * @return started {@link Process} object
      */
-    private static Process startProcess(String commandString) throws IOException {
+    private static Process startProcess(String commandString, InputStream stdin) throws IOException {
         Process process;
         String [] command = isWindows ?
                 new String[] {"c:/Windows/System32/wsl.exe", "bash", "-c", commandString} :
                 new String[] {"bash", "-c", commandString} ;
         ProcessBuilder p = new ProcessBuilder(command);
         process = p.start();
+        if (stdin != null) {
+            OutputStream processIn = process.getOutputStream();
+            IOUtils.copy(stdin, processIn);
+        }
         return process;
     }
 
-    /**
-     * Method to interrupt one of the running ServerJs threads by the thread id.
-     */
+    private static Process startProcess(String commandString) throws IOException {
+        return startProcess(commandString, null);
+    }
+
+
+        /**
+         * Method to interrupt one of the running ServerJs threads by the thread id.
+         */
     public static boolean interruptThread(long threadId) {
         Optional<Thread> t = serverJsThreads.keySet().stream().filter(a -> a.getId() == threadId).findFirst();
         if (t.isPresent()) {

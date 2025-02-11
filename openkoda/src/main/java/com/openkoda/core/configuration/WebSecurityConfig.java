@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2016-2023, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
+Copyright (c) 2016-2024, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation
@@ -22,6 +22,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 package com.openkoda.core.configuration;
 
 import com.openkoda.controller.common.URLConstants;
+import com.openkoda.core.helper.UrlHelper;
 import com.openkoda.core.security.*;
 import jakarta.annotation.Resource;
 import jakarta.servlet.Filter;
@@ -45,12 +46,9 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.expression.WebExpressionAuthorizationManager;
-import org.springframework.security.web.authentication.RememberMeServices;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.security.web.authentication.rememberme.TokenBasedRememberMeServices;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.security.web.context.SecurityContextRepository;
 import org.springframework.web.filter.CompositeFilter;
@@ -83,7 +81,7 @@ public class WebSecurityConfig implements URLConstants {
     @Value("${rememberme.key:uniqueRememberKey}")
     private String rememberMeKey;
 
-    @Value("${rememberme.parameter:remember-me}")
+    @Value("${rememberme.parameter:remember}")
     private String rememberMeParameter;
 
     @Value("${rememberme.parameter:remember-me}")
@@ -148,7 +146,7 @@ public class WebSecurityConfig implements URLConstants {
     }
 
 
-    @Value("${page.after.auth.for.one.organization:/html/organization/%s/settings}")
+    @Value("${page.after.auth.for.one.organization:/html/organization/%s/dashboard}")
     private String pageAfterAuthForOneOrganization;
 
     @Value("${page.after.auth.for.multiple.organizations:/html/organization/all}")
@@ -189,7 +187,7 @@ public class WebSecurityConfig implements URLConstants {
         return http.securityMatcher(_HTML + "/**")
                 .addFilterBefore(ssoFilter(), UsernamePasswordAuthenticationFilter.class)
                 .addFilterAfter(loginAndPasswordAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
-                .headers().frameOptions().sameOrigin().and()
+                .headers().frameOptions().disable().and()
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(publicPages).permitAll()
                         .requestMatchers(_HTML + _ADMIN + _ANY).hasRole("_ADMIN")
@@ -202,7 +200,7 @@ public class WebSecurityConfig implements URLConstants {
                         .loginPage(_LOGIN)
                         .loginProcessingUrl("/perform_login")
                 )
-                .rememberMe(rememberMe -> rememberMe.rememberMeServices(rememberMeServices(customUserDetailsService))
+                .rememberMe(rememberMe -> rememberMe
                         .rememberMeCookieName(rememberMeCookieName)
                         .rememberMeParameter(rememberMeParameter)
                         .key(rememberMeKey)
@@ -248,13 +246,14 @@ public class WebSecurityConfig implements URLConstants {
         return http.securityMatcher("/**")
                 .addFilterBefore(ssoFilter(), UsernamePasswordAuthenticationFilter.class)
                 .addFilterAfter(loginAndPasswordAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
-                .headers().frameOptions().sameOrigin().and()
+                .headers().frameOptions().disable().and()
                 .csrf(csrf -> csrf
                         .ignoringRequestMatchers(csrfDisabledPages)
                 )
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(publicPages).permitAll()
                         .requestMatchers(regexMatcher("/" + FRONTENDRESOURCEREGEX + FRONTENDRESOURCE_ORGID_PARAM_REGEX)).permitAll()
+                        .requestMatchers(regexMatcher("/" + FRONTENDRESOURCEREGEX + FRONTENDRESOURCE_PARAMS_REGEX)).permitAll()
                         .requestMatchers(regexMatcher("/" + FRONTENDRESOURCEREGEX + FRONTENDRESOURCE_AUTH_PARAMS_REGEX)).authenticated()
                         .requestMatchers(_PASSWORD + "/**").authenticated()
                 )
@@ -264,7 +263,7 @@ public class WebSecurityConfig implements URLConstants {
                         .logoutSuccessHandler( (request, response, authentication) -> {
                             String email = authentication.getName();
                             customUserDetailsService.unsubscribeUser(email);
-                            response.sendRedirect("/");
+                            response.sendRedirect(UrlHelper.getInstance().getContextPath());
                             })
                 );
     }
@@ -297,14 +296,5 @@ public class WebSecurityConfig implements URLConstants {
     public SecurityContextRepository securityContextRepository(){
         return new HttpSessionSecurityContextRepository();
     }
-
-    @Bean
-    RememberMeServices rememberMeServices(UserDetailsService userDetailsService) {
-        TokenBasedRememberMeServices.RememberMeTokenAlgorithm encodingAlgorithm = TokenBasedRememberMeServices.RememberMeTokenAlgorithm.SHA256;
-        TokenBasedRememberMeServices rememberMe = new TokenBasedRememberMeServices(rememberMeKey, userDetailsService, encodingAlgorithm);
-        rememberMe.setMatchingAlgorithm(TokenBasedRememberMeServices.RememberMeTokenAlgorithm.MD5);
-        return rememberMe;
-    }
-
 
 }

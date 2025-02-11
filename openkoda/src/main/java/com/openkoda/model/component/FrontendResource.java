@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2016-2023, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
+Copyright (c) 2016-2024, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software
  and associated documentation files (the "Software"), to deal in the Software without restriction, 
@@ -115,6 +115,9 @@ public class FrontendResource extends ComponentEntity {
     @NotNull
     private String name;
 
+    @Column(length = 1000)
+    private String userFriendlyName;
+
     @Column(length = 65536 * 4)
     private String content;
 
@@ -203,6 +206,14 @@ public class FrontendResource extends ComponentEntity {
      */
     public void setName(String name) {
         this.name = name;
+    }
+
+    public String getUserFriendlyName() {
+        return userFriendlyName;
+    }
+
+    public void setUserFriendlyName(String userFriendlyName) {
+        this.userFriendlyName = userFriendlyName;
     }
 
     /**
@@ -318,4 +329,12 @@ public class FrontendResource extends ComponentEntity {
     public void setAccessLevel(AccessLevel accessLevel) {
         this.accessLevel = accessLevel;
     }
+
+    public FrontendResource(Long organizationId, String moduleName, String name, AccessLevel accessLevel) {
+        super(organizationId);
+        this.moduleName = moduleName;
+        this.name = name;
+        this.accessLevel = accessLevel;
+    }
+
 }

@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2016-2023, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
+Copyright (c) 2016-2024, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation
@@ -30,6 +30,7 @@ public class FrontendResourceConversionDto extends ComponentDto{
     private boolean includeInSitemap;
     private FrontendResource.AccessLevel accessLevel;
     private String name;
+    private String userFriendlyName;
     private String requiredPrivilege;
     private String type;
     private String resourceType;
@@ -59,6 +60,14 @@ public class FrontendResourceConversionDto extends ComponentDto{
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public String getUserFriendlyName() {
+        return userFriendlyName;
+    }
+
+    public void setUserFriendlyName(String userFriendlyName) {
+        this.userFriendlyName = userFriendlyName;
     }
 
     public String getRequiredPrivilege() {

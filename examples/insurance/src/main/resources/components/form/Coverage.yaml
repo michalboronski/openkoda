@@ -1,0 +1,11 @@
+!!com.openkoda.service.export.dto.FormConversionDto
+"code": "code/form/Coverage.js"
+"module": "core"
+"name": "Coverage"
+"organizationId": !!null "null"
+"readPrivilege": "manageOrgData"
+"registerApiCrudController": !!bool "true"
+"registerHtmlCrudController": !!bool "true"
+"tableColumns": "coverageId,coverageType,coverageDescription,coverageAmount"
+"tableName": "dynamic_COVERAGE"
+"writePrivilege": "manageOrgData"

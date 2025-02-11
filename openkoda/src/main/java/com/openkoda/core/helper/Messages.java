@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2016-2023, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
+Copyright (c) 2016-2024, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation
@@ -48,11 +48,14 @@ public class Messages {
 
     private MessageSourceAccessor accessor;
 
+    private  static Messages instance;
+
     @Value("${show.message.key.for.default.field.label:false}")
     private boolean showMessageKeyForDefaultFieldLabel;
 
     @PostConstruct
     private void init() {
+        instance = this;
         accessor = new MessageSourceAccessor(messageSource);
     }
 
@@ -119,7 +122,7 @@ public class Messages {
      * Method returning message field tooltip if exists
      * or generate default one otherwise
      */
-    public String getFieldTooltip(String code, String fieldName) {
+    public String getFieldTooltip(String code) {
         String result = accessor.getMessage(code, NO_MESSAGE);
         if (NO_MESSAGE.equals(result)) {
             result = StringUtils.EMPTY;
@@ -140,5 +143,21 @@ public class Messages {
             }
         }
         return result;
+    }
+
+    public static String message(String code, String ... args) {
+        return instance.get(code, args);
+    }
+
+    public static String fieldLabel(String code, String fieldName) {
+        return instance.getFieldLabel(code, fieldName);
+    }
+
+    public static String fieldTooltip(String code) {
+        return instance.getFieldTooltip(code);
+    }
+
+    public static String fieldPlaceholder(String code, String fieldName) {
+        return instance.getFieldPlaceholder(code, fieldName);
     }
 }

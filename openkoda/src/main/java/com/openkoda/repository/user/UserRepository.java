@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2016-2023, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
+Copyright (c) 2016-2024, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation
@@ -35,6 +35,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
+import reactor.util.function.Tuple6;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -109,7 +110,7 @@ public interface UserRepository extends UnsecuredFunctionalRepositoryWithLongId<
     @Query("""
         SELECT
             new com.openkoda.core.flow.Tuple(
-            dbUserRole.id,
+            dbUserRole.roleId,
             dbUserRole.role.name,
             dbUserRole.role.privileges,
             dbUserRole.organizationId,
@@ -144,4 +145,7 @@ public interface UserRepository extends UnsecuredFunctionalRepositoryWithLongId<
 
     @Query("SELECT u.email FROM User u WHERE u.id = :id")
     String findUserEmailByUserId(Long id);
+
+//    @Query("select user.firstName, user.lastName, user.roles.roleId, user.roles.role.name from User user")
+//    Object[] test();
 }

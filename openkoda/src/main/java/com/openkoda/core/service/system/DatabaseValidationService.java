@@ -1,3 +1,24 @@
+/*
+MIT License
+
+Copyright (c) 2016-2024, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
+documentation files (the "Software"), to deal in the Software without restriction, including without limitation
+the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software,
+and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice
+shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR
+A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS
+OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR
+IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+*/
+
 package com.openkoda.core.service.system;
 
 import com.openkoda.controller.ComponentProvider;
@@ -6,11 +27,9 @@ import com.openkoda.core.customisation.FrontendMappingMap;
 import com.openkoda.core.form.FieldType;
 import com.openkoda.core.form.FrontendMappingDefinition;
 import com.openkoda.core.form.FrontendMappingFieldDefinition;
-import com.openkoda.core.helper.NameHelper;
 import jakarta.annotation.PostConstruct;
 import jakarta.inject.Inject;
 import org.hibernate.boot.model.naming.CamelCaseToUnderscoresNamingStrategy;
-import org.hibernate.boot.model.naming.Identifier;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.datasource.DataSourceUtils;
 import org.springframework.stereotype.Service;
@@ -27,7 +46,6 @@ import java.util.Set;
 
 import static com.openkoda.core.helper.NameHelper.toColumnName;
 import static java.util.stream.Collectors.toSet;
-
 import static org.apache.commons.lang.StringUtils.isNotBlank;
 
 @Service
@@ -64,12 +82,12 @@ public class DatabaseValidationService extends ComponentProvider {
     }
     public String getUpdateScript(FrontendMappingDefinition frontendMappingDefinition, String tableName, boolean includeOnlyMissingColumns){
         StringBuilder updateDatabaseScript = new StringBuilder();
-        Set<FrontendMappingFieldDefinition> fields = Arrays.stream(frontendMappingDefinition.getDbTypeFields())
+        Set<FrontendMappingFieldDefinition> fields = Arrays.stream(frontendMappingDefinition.getDbTypeFieldsExplicitlyDefined())
                 .collect(toSet());
         try {
             Map<String, String> tableColumns = getTableColumns(tableName);
             for(FrontendMappingFieldDefinition field : fields.stream().filter(f -> f.getType() != FieldType.files).toList()) {
-                String columnName = toColumnName(field.getName());
+                String columnName = toColumnName(field.getValueName());
                 boolean addColumn = !includeOnlyMissingColumns || !tableColumns.containsKey(columnName);
                 if(addColumn) {
                     String dbType = field.getType().getDbType().getValue();
@@ -108,7 +126,7 @@ public class DatabaseValidationService extends ComponentProvider {
                 validationLog.append(String.format("Table %s does not exist. Will be created on form import.\r\n", tableName));
             }
             for(Map.Entry<String, FrontendMappingFieldDefinition> column : columns.entrySet().stream().filter(e -> e.getValue().getType() != FieldType.files).collect(toSet())) {
-                String columnName = toColumnName(column.getKey());
+                String columnName = toColumnName(column.getValue().getColumnName());
                 if (!tableColumns.containsKey(columnName)) {
                     validationLog.append(String.format("Column %s not present in table %s\r\n", columnName, tableName));
 //                  table does not contain column, add alter query

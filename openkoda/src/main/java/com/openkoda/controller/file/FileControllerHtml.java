@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2016-2023, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
+Copyright (c) 2016-2024, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation
@@ -28,6 +28,7 @@ import com.openkoda.model.file.File;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import org.apache.commons.collections.keyvalue.DefaultMapEntry;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
@@ -84,6 +85,14 @@ public class FileControllerHtml extends AbstractFileController {
                 .mav("file-" + ALL);
     }
 
+    @Transactional(readOnly = true)
+    @GetMapping(_ID + _DOWNLOAD)
+    public void download(@PathVariable(ID) Long fileId, HttpServletResponse response) throws SQLException, IOException {
+        debug("[download] fileId: {}", fileId);
+        File file = repositories.secure.file.findOne(fileId);
+        services.file.getFileContentAndPrepareResponse(file, true, false, response);
+    }
+
     @GetMapping(_NEW_SETTINGS)
     public Object create(
             @PathVariable(value = ORGANIZATIONID, required = false) Long organizationId) {
@@ -133,22 +142,6 @@ public class FileControllerHtml extends AbstractFileController {
                 .mav(a -> true, a -> false);
     }
 
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    public class UploadResponse implements Serializable {
-
-        public String error;
-        public boolean success;
-        public FileDto file;
-        public Long fileId;
-
-        public UploadResponse(String error, boolean success, Long fileId, FileDto file) {
-            this.error = error;
-            this.success = success;
-            this.file = file;
-            this.fileId = fileId;
-        }
-    }
-
     @Transactional(readOnly = true)
     @GetMapping(_ID + _CONTENT)
     public void content(
@@ -162,7 +155,6 @@ public class FileControllerHtml extends AbstractFileController {
 
     @Transactional
     @PostMapping(_NEW + _UPLOAD)
-    //TODO Rule 1.2: All business logic delegation should be in Abstract Controller
     public ResponseEntity<UploadResponse> upload(
             @PathVariable(value = ORGANIZATIONID, required = false) Long organizationId,
             @RequestParam("qqfile") MultipartFile file,
@@ -173,24 +165,15 @@ public class FileControllerHtml extends AbstractFileController {
             @RequestParam(value = "qqtotalparts", required = false, defaultValue = "-1") int totalParts,
             @RequestParam(value = "qqtotalfilesize", required = false, defaultValue = "-1") long totalFileSize) throws SQLException, IOException {
         debug("[upload] upload uuid {}, fileName {}", uuid, fileName);
-        File f = unsecureFileRepository.findByUploadUuid(uuid);
-        if (f == null) {
-            String originalFilename = file.getOriginalFilename();
-            InputStream inputStream = file.getInputStream();
-            f = services.file.saveAndPrepareFileEntity(organizationId, uuid, fileName, totalFileSize, originalFilename, inputStream);
-            unsecureFileRepository.saveAndFlush(f);
-        }
-        UploadResponse result = new UploadResponse(null, true, f.getId(), File.toFileDto(f));
+        UploadResponse result = doUpload(organizationId, file, uuid, fileName, totalFileSize);
         return ResponseEntity.ok().body(result);
     }
 
     @PostMapping(_NEW + "/upload-done")
-    //TODO Rule 1.2: All business logic delegation should be in Abstract Controller
     public ResponseEntity<DefaultMapEntry> chunksDone(
             @RequestParam("qquuid") String uuid) {
         debug("[chunksDone] upload uuid {}", uuid);
-        File f = unsecureFileRepository.findByUploadUuid(uuid);
-        DefaultMapEntry dto = new DefaultMapEntry(f.getId(), new FileDto());
+        DefaultMapEntry dto = doChunksDone(uuid);
         return ResponseEntity.ok().body(dto);
     }
 }

@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.w3.org/1999/xhtml">
 <body>
-<div th:fragment="notifications(readNotificationsList, unreadNotificationsList, userEntityId)">
+<div th:fragment="notifications(readNotificationsList, unreadNotificationsList)">
     <form id="markNotificationsAsRead"
-          th:action="${@url.markNotificationsAsRead(userEntityId, organizationEntityId, unreadNotificationsIdListString)}"
+          th:action="${@url.markNotificationsAsRead(organizationEntityId, unreadNotificationsIdListString)}"
           method="POST">
     </form>
 
@@ -23,7 +23,7 @@
                 <div th:replace="~{notification-dropdown :: generateUnreadNotification(${n})}"></div>
             </form>
 
-            <a class="dropdown-item" th:href="${@url.notificationsAll(userEntityId, organizationEntityId)}">
+            <a class="dropdown-item" th:href="${@url.notificationsAll(organizationEntityId)}">
                 Show All Alerts
             </a>
         </div>

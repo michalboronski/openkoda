@@ -9,20 +9,22 @@
     <div layout:fragment="content">
         <div th:fragment="allNotifications" class="card shadow mb-4">
             <form id="markAllNotificationsAsRead"
-                  th:action="${@url.markAllNotificationsAsRead(userEntityId, organizationEntityId)}"
+                  th:action="${@url.markAllNotificationsAsRead(organizationEntityId)}"
                   method="POST">
             </form>
-            <div class="card-header py-3 d-flex flex-row">
+            <div class="card-header py-3 d-flex flex-row align-items-start justify-content-between gap-10">
                 <h6 class="m-0 font-weight-bold">Notifications</h6>
-                <div class="card-header-buttons">
-                    <a class="btn-primary btn btn-sm"
-                       onclick="app.submitAndCallback($('#markAllNotificationsAsRead'), app.refreshView);">
-                        Mark All as Read
-                    </a>
+                <div class="d-flex align-items-start ">
+                    <nav th:replace="~{tables::search('notification', ${notificationPage})}"></nav>
+                    <div class="card-header-buttons">
+                        <a class="btn-primary btn btn-sm"
+                           onclick="app.submitAndCallback($('#markAllNotificationsAsRead'), app.refreshView);">
+                            Mark All as Read
+                        </a>
+                    </div>
                 </div>
             </div>
             <div class="card-body pt-0">
-                <nav th:replace="~{tables::search('notification', ${notificationPage})}"></nav>
                 <div class="table-responsive">
                     <table class="table table-hover">
                         <thead>

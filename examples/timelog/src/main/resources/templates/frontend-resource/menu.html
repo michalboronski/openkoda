@@ -7,6 +7,9 @@
 <div th:fragment="users-menu">
 
     <li class="nav-item">
+        <a class="nav-link" th:href="${@url.organizationBase() + '/cn/dashboard'}">
+            <span th:text="#{template.dashboard}">Dashboard</span>
+        </a>
         <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseOrganizations" aria-expanded="false" aria-controls="collapseUtilities">
             <span th:text="#{template.userOrganizations}">Your Organizations</span>
         </a>

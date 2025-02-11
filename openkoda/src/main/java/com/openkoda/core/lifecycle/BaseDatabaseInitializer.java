@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2016-2023, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
+Copyright (c) 2016-2024, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation
@@ -25,7 +25,11 @@ import com.openkoda.controller.ComponentProvider;
 import com.openkoda.core.helper.PrivilegeHelper;
 import com.openkoda.core.multitenancy.QueryExecutor;
 import com.openkoda.core.security.UserProvider;
-import com.openkoda.model.*;
+import com.openkoda.model.GlobalRole;
+import com.openkoda.model.OpenkodaModule;
+import com.openkoda.model.OrganizationRole;
+import com.openkoda.model.PrivilegeBase;
+import com.openkoda.model.User;
 import com.openkoda.model.component.ServerJs;
 import com.openkoda.service.export.ClasspathComponentImportService;
 import jakarta.inject.Inject;
@@ -110,6 +114,15 @@ public class BaseDatabaseInitializer extends ComponentProvider {
     @Value("${init.admin.password}")
     private String initAdminPassword;
 
+    @Value("${multitenancy.postgres.role.name}")
+    private String multitenancyPostgresRole;
+    @Value("${spring.datasource.username}")
+    private String settingsUsername;
+
+
+    @Value("${multitenancy.postgres.role.create}")
+    private Boolean multitenancyPostgresRoleCrete;
+
     @Value("${init.admin.firstName:Mark}") private String initAdminFirstName;
 
     @Value("${init.admin.lastName:Administrator}") private String initAdminLastName;
@@ -160,16 +173,38 @@ public class BaseDatabaseInitializer extends ComponentProvider {
 
         try {
             UserProvider.setCronJobAuthentication();
+            createMultitenancyRole();
             createCoreModule();
             createInitialRoles();
             createRegistrationFormServerJs();
             runInitializationScripts();
-            classpathComponentImportService.loadAllComponents();
+            classpathComponentImportService.loadAllComponents(true);
             alreadySetup = true;
         } finally {
             UserProvider.clearAuthentication();
         }
 
+    }
+
+    private void createMultitenancyRole() {
+        if (multitenancyPostgresRoleCrete) {
+            queryExecutor.runEntityManagerOperation(true, em -> {
+                Number roleCount = (Number) em.createNativeQuery("SELECT count(1) FROM pg_catalog.pg_roles WHERE rolname = '" + multitenancyPostgresRole + "'").getSingleResult();
+                boolean roleExists = roleCount.intValue() > 0;
+                if (!roleExists) {
+                    em.createNativeQuery("CREATE ROLE " + multitenancyPostgresRole + "; GRANT " + multitenancyPostgresRole + " TO " + settingsUsername +";").executeUpdate();
+                }
+                String[] queries = {
+                        "ALTER DEFAULT PRIVILEGES GRANT ALL ON TABLES TO " + multitenancyPostgresRole,
+                        "ALTER DEFAULT PRIVILEGES GRANT ALL ON SEQUENCES TO " + multitenancyPostgresRole,
+                        "ALTER DEFAULT PRIVILEGES GRANT ALL ON SCHEMAS TO " + multitenancyPostgresRole,
+                        "GRANT ALL ON ALL TABLES IN SCHEMA public TO " + multitenancyPostgresRole,
+                        "GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO " + multitenancyPostgresRole
+                };
+                em.createNativeQuery(StringUtils.join(queries, ";")).executeUpdate();
+                return roleExists;
+            });
+        }
     }
 
     /**

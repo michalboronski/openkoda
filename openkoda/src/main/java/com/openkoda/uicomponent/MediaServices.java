@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2016-2023, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
+Copyright (c) 2016-2024, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation
@@ -62,5 +62,24 @@ public interface MediaServices {
      */
     @Autocomplete
     File createFileFromByteArray(byte[] input, String fileName);
+
+    /**
+     * <p>Save a file in database</p>
+     */
+    @Autocomplete
+    File saveFile(File file);
+
+    /**
+     * <p>Creates a document file generated from a Document definition</p>
+     */
+    @Autocomplete
+    File generateDocument(Long documentId, Map<String, String> requestParams, boolean convertToPdf);
+
+    /**
+     * <p>Creates a document file generated from a Document definition</p>
+     */
+    @Autocomplete
+    File generateDocument(String documentFilename, Map<String, String> requestParams, boolean convertToPdf);
+
 
 }

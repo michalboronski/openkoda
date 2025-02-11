@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2016-2023, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
+Copyright (c) 2016-2024, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation
@@ -27,6 +27,8 @@ import com.openkoda.model.component.Scheduler;
 import com.openkoda.repository.ComponentEntityRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.Optional;
+
 /**
  * A Repository for {@link Scheduler} entity.
  * It basically allows to use JPARepository's methods and to perform searches among Schedulers records in database.
@@ -37,4 +39,5 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface SchedulerRepository extends UnsecuredFunctionalRepositoryWithLongId<Scheduler>, ModelConstants, ComponentEntityRepository<Scheduler> {
 
+    Scheduler findByOrganizationIdAndEventDataAndCronExpression(Long organizationId, String eventData, String cronExpression);
 }

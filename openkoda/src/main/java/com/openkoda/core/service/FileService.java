@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2016-2023, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
+Copyright (c) 2016-2024, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation
@@ -235,6 +235,10 @@ public class FileService extends ComponentProvider {
             try (InputStream is = f.getContentStream()) {
                 IOUtils.copy(is, os);
             }   
+        } else {
+            // FIXME: #doBetterStorageHandling: temporary solution, maybe we can add 'memory' or 'temporary' type
+            throw new RuntimeException("Method File.getContentStream() used on file " +
+                    "not stored in filesystem or database");
         }
               
         os.flush();

@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2016-2023, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
+Copyright (c) 2016-2024, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation
@@ -23,6 +23,7 @@ package com.openkoda.model.notification;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.openkoda.model.Organization;
+import com.openkoda.model.Role;
 import com.openkoda.model.User;
 import com.openkoda.model.common.*;
 import jakarta.persistence.*;
@@ -93,6 +94,13 @@ public class Notification extends TimestampedEntity implements AuditableEntity, 
     @Column(updatable = false, name = "user_id")
     private Long userId;
 
+    @JsonIgnore
+    @ManyToOne(optional = false, fetch=FetchType.LAZY)
+    @JoinColumn(insertable = false, updatable = false, name = "role_id")
+    private Role role;
+    @Column(updatable = false, name = "role_id")
+    private Long roleId;
+
     @Column(name = "required_privilege")
     private String requiredPrivilege;
 
@@ -155,6 +163,17 @@ public class Notification extends TimestampedEntity implements AuditableEntity, 
     }
 
     /**
+     * <p>Construcor for Notification with specified roleId</p>
+     */
+    public Notification(String message, NotificationType type, Long organizationId, String requiredPrivilege, Long roleId) {
+        this.message = message;
+        this.type = type;
+        this.organizationId = organizationId;
+        this.requiredPrivilege = requiredPrivilege;
+        this.roleId = roleId;
+    }
+
+    /**
      * <p>Contructor for Notification with specified userId</p>
      */
     public Notification(String message, NotificationType type, String requiredPrivilege, Long userId) {
@@ -191,6 +210,10 @@ public class Notification extends TimestampedEntity implements AuditableEntity, 
 
     public Long getUserId() {
         return userId;
+    }
+
+    public Long getRoleId() {
+        return roleId;
     }
 
     public String getRequiredPrivilege() {

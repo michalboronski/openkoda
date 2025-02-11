@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2016-2023, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
+Copyright (c) 2016-2024, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation
@@ -21,6 +21,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 package com.openkoda.model.component.event;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.openkoda.core.helper.NameHelper;
 import com.openkoda.model.Organization;
 import com.openkoda.model.PrivilegeNames;
@@ -314,4 +315,15 @@ public class EventListenerEntry extends ComponentEntity {
     public String getRequiredWritePrivilege() {
         return requiredWritePrivilege;
     }
+
+    public EventListenerEntry(Long organizationId, String moduleName, String eventClassName, String eventName, String eventObjectType, String consumerClassName, String consumerMethodName) {
+        super(organizationId);
+        this.moduleName = moduleName;
+        this.eventClassName = eventClassName;
+        this.eventName = eventName;
+        this.eventObjectType = eventObjectType;
+        this.consumerClassName = consumerClassName;
+        this.consumerMethodName = consumerMethodName;
+    }
+
 }

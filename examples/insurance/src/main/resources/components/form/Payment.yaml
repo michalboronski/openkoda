@@ -1,0 +1,11 @@
+!!com.openkoda.service.export.dto.FormConversionDto
+"code": "code/form/Payment.js"
+"module": "core"
+"name": "Payment"
+"organizationId": !!null "null"
+"readPrivilege": "manageOrgData"
+"registerApiCrudController": !!bool "true"
+"registerHtmlCrudController": !!bool "true"
+"tableColumns": "paymentId,amount,paymentDueDate,paymentDate,paymentMethod,paymentStatus,policyId"
+"tableName": "dynamic_PAYMENT"
+"writePrivilege": "manageOrgData"

@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2016-2023, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
+Copyright (c) 2016-2024, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation
@@ -24,18 +24,25 @@ package com.openkoda.core.helper;
 import com.openkoda.core.tracker.LoggingComponentWithRequestId;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+
+import java.net.URL;
+
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
 
 @Component
 public class SlashEndingUrlInterceptor implements LoggingComponentWithRequestId, HandlerInterceptor {
 
+    @Value("${server.servlet.context-path}") private String springContext = "";
+    
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
         debug("[preHandle]");
         String uri = request.getRequestURI();
 
-        if (!uri.equals("/") && uri.endsWith("/")) {
+        if (!uri.equals("/") && uri.endsWith("/") && !uri.startsWith(springContext)) {
             response.sendRedirect(uri.substring(0, uri.length() - 1));
             return false;
         }

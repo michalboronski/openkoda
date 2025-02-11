@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org"
-      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" lang="en" layout:decorate="~{${defaultLayout}}">
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" xmlns="http://www.w3.org/1999/html" lang="en"
+      layout:decorate="~{${defaultLayout}}">
 <body>
 <div class="container-fluid">
   <div layout:fragment="content" th:attr="data-menu-item='reports'">
@@ -8,14 +9,14 @@
       <nav th:replace="~{navigation-fragments::reporting-nav-tabs('reports')}"></nav>
 
       <div class="card shadow mb-4">
-          <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between ">
+          <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between gap-10">
               <h6 class="m-0 font-weight-bold text-nowrap"><th:block th:if="${reportId != null}" th:text="${organizationRelatedForm.dto[name]}"></th:block></h6>
-              <div class="d-flex align-items-center ">
+              <div class="d-flex align-items-start ">
                   <div class="card-header-buttons">
                       <button th:if="${@auth.hasGlobalOrOrgPrivilege('canCreateReports',organizationEntityId)}"
                               class="btn-primary btn btn-sm btn-icon-split"
                               type="button" data-toggle="collapse"
-                              data-target="#query-form" th:aria-expanded="${error != null or reportId == null}"
+                              data-target="#query-form" th:aria-expanded="${error != null}"
                               aria-controls="query-form">
                           <span class="icon text-white-50">
                               <i class="fas fa-caret-down"></i>
@@ -86,7 +87,7 @@
                   <div th:if="${error != null}" class="alert alert-danger"><pre class="mb-0" th:text="${error}"/></div>
 
                   <form th:action="${@url.reportQuery(organizationEntityId)}" method="post" id="query-form"
-                        th:class="'mb-4 collapse' + ${error != null or reportId == null ? ' show' : ''}">
+                        th:class="'mb-4 collapse' + ${error != null ? ' show' : ''}">
                       <input type="hidden" name="reportId" th:value="${reportId}">
                       <div class="form-group">
                           <textarea class="form-control d-none" rows="3" name="query" id="query-input"
@@ -101,24 +102,7 @@
                   </form>
               </th:block>
 
-              <div class="table-responsive">
-                  <table class="table table-hover">
-                      <thead th:if="${genericReportViewLinkedHashMap != null and #lists.size(genericReportViewLinkedHashMap) > 0}">
-                      <tr>
-                          <th:block th:each="tableValue: ${genericReportViewLinkedHashMap.get(0)}">
-                              <th th:text="${@messages.getColumnLabel(tableValue.key)}"/>
-                          </th:block>
-                      </tr>
-                      </thead>
-                      <tbody>
-                      <tr th:each="a : ${genericReportViewLinkedHashMap}">
-                          <td th:each="tableValue: ${a}"
-                              th:text="(${T(org.apache.commons.lang3.math.NumberUtils).isCreatable(tableValue.value)} and ${#strings.contains(tableValue.value,'.')}) ? ${#numbers.formatDecimal(tableValue.value,1,'COMMA',2,'POINT')} : ${tableValue.value}"
-                              th:class="${T(org.apache.commons.validator.GenericValidator).isDate(tableValue.value, 'MM/dd/yy', false)}? 'text-nowrap'"></td>
-                      </tr>
-                      </tbody>
-                  </table>
-              </div>
+              <th:block th:replace="::report-result-table-view(${genericReportViewLinkedHashMap})"></th:block>
           </div>
       </div>
       <script th:inline="javascript">
@@ -170,7 +154,7 @@
           }
 
 		  $(document).ready(function () {
-			  if(error || !reportId) {
+			  if(error) {
 				  initSqlEditor();
 				  codeRendered = true;
               }
@@ -184,6 +168,36 @@
 		  });
       </script>
   </div>
+</div>
+<div layout:fragment="table" class="card shadow mb-4">
+    <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between gap-10">
+        <h6 class="m-0 font-weight-bold text-nowrap"><th:block th:if="${reportId != null}" th:text="${organizationRelatedForm.dto[name]}"></th:block></h6>
+    </div>
+
+    <div class="card-body">
+        <th:block th:replace="::report-result-table-view(${genericReportViewLinkedHashMap})"></th:block>
+    </div>
+</div>
+
+<div th:fragment="report-result-table-view(genericReportViewLinkedHashMap)">
+    <div class="table-responsive">
+        <table class="table table-hover">
+            <thead th:if="${genericReportViewLinkedHashMap != null and #lists.size(genericReportViewLinkedHashMap) > 0}">
+            <tr>
+                <th:block th:each="tableValue: ${genericReportViewLinkedHashMap.get(0)}">
+                    <th th:text="${@messages.getColumnLabel(tableValue.key)}"/>
+                </th:block>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="a : ${genericReportViewLinkedHashMap}">
+                <td th:each="tableValue: ${a}"
+                    th:text="(${@format.isDecimalString(tableValue.value)}) ? ${#numbers.formatDecimal(tableValue.value,1,'COMMA',2,'POINT')} : ${tableValue.value}"
+                    th:class="${@format.isDateString(tableValue.value)}? 'text-nowrap'"></td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
 </div>
 </body>
 </html>

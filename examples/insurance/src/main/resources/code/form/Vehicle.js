@@ -1,0 +1,8 @@
+a => a.number("vehicleId")
+                    .text("make")
+                    .text("model")
+                    .text("licensePLate")
+                    .text("vin")
+                    .number("year")
+                    .text("color")
+                    .manyToOne("coverageId","coverage")

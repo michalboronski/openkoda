@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2016-2023, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
+Copyright (c) 2016-2024, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation
@@ -23,7 +23,7 @@ package com.openkoda.form;
 
 import com.openkoda.core.form.AbstractEntityForm;
 import com.openkoda.core.form.FrontendMappingDefinition;
-import com.openkoda.dto.user.BasicUser;
+import com.openkoda.dto.user.BasicUserDto;
 import com.openkoda.model.User;
 import org.springframework.validation.BindingResult;
 
@@ -40,7 +40,7 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
  * @author Arkadiusz Drysch (adrysch@stratoflow.com)
  *
  */
-public class BasicUserForm extends AbstractEntityForm<BasicUser, User> {
+public class BasicUserForm extends AbstractEntityForm<BasicUserDto, User> {
 
     private Object dtoField;
 
@@ -49,7 +49,7 @@ public class BasicUserForm extends AbstractEntityForm<BasicUser, User> {
      *
      * @param entity a {@link com.openkoda.model.User} dto.
      */
-    public BasicUserForm(BasicUser dto, User entity) {
+    public BasicUserForm(BasicUserDto dto, User entity) {
         super(dto, entity, userForm);
     }
 
@@ -59,7 +59,7 @@ public class BasicUserForm extends AbstractEntityForm<BasicUser, User> {
      * @param entity a {@link com.openkoda.model.User} dto.
      * @param form   a {@link FrontendMappingDefinition} dto.
      */
-    public BasicUserForm(BasicUser dto, User entity, FrontendMappingDefinition form) {
+    public BasicUserForm(BasicUserDto dto, User entity, FrontendMappingDefinition form) {
         super(dto, entity, form);
     }
 
@@ -70,7 +70,7 @@ public class BasicUserForm extends AbstractEntityForm<BasicUser, User> {
         super(null, null, userForm);
     }
 
-    protected static BasicUser validate(BasicUser dto, BindingResult br) {
+    protected static BasicUserDto validate(BasicUserDto dto, BindingResult br) {
 
         if (isNotBlank(dto.email) && !emailIsValid(dto.email)) {
             br.rejectValue("dto.email", "not.valid");
@@ -89,7 +89,7 @@ public class BasicUserForm extends AbstractEntityForm<BasicUser, User> {
         return false;
     }
 
-    protected static BasicUser populateFromEntity(BasicUser dto, User entity) {
+    protected static BasicUserDto populateFromEntity(BasicUserDto dto, User entity) {
         dto.firstName = entity.getFirstName();
         dto.lastName = entity.getLastName();
         dto.email = entity.getEmail();

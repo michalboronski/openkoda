@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2016-2023, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
+Copyright (c) 2016-2024, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation
@@ -26,13 +26,23 @@ public class ServerJsDto implements CanonicalObject, OrganizationRelatedObject{
     public Long organizationId;
 
     public String name;
+    public String description;
     public String code;
     public String model;
     public String arguments;
+    public boolean advanced;
 
     
     public String getName() {
         return this.name;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
     }
 
     public String getCode() {
@@ -75,5 +85,13 @@ public class ServerJsDto implements CanonicalObject, OrganizationRelatedObject{
 
     public void setOrganizationId(Long organizationId) {
         this.organizationId = organizationId;
+    }
+
+    public boolean isAdvanced() {
+        return advanced;
+    }
+
+    public void setAdvanced(boolean advanced) {
+        this.advanced = advanced;
     }
 }

@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2016-2023, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
+Copyright (c) 2016-2024, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation
@@ -48,6 +48,7 @@ public class ControllerEndpoint extends ComponentEntity {
 
     public enum HttpMethod {
         GET, POST
+
     }
 
     @Column(name = "sub_path")
@@ -65,12 +66,15 @@ public class ControllerEndpoint extends ComponentEntity {
     @Column(length = 1000)
     private String modelAttributes;
 
+    @Column(length = 65535)
+    private String testData;
+
     @Enumerated(EnumType.STRING)
     @NotNull
     private ResponseType responseType = ResponseType.HTML;
 
     @JsonIgnore
-    @ManyToOne(optional = true, fetch = FetchType.LAZY)
+    @ManyToOne(optional = true, fetch = FetchType.EAGER)
     @JoinColumn(nullable = true, insertable = false, updatable = false, name = FRONTEND_RESOURCE_ID)
     private FrontendResource frontendResource;
     @Column(nullable = true, name = FRONTEND_RESOURCE_ID)
@@ -87,6 +91,7 @@ public class ControllerEndpoint extends ComponentEntity {
     public ControllerEndpoint(Long frontendResourceId, Long organizationId) {
         super(organizationId);
         this.frontendResourceId = frontendResourceId;
+        this.httpMethod = HttpMethod.GET;
     }
 
     public String getSubPath() {
@@ -132,6 +137,14 @@ public class ControllerEndpoint extends ComponentEntity {
         this.modelAttributes = modelAttributes;
     }
 
+    public String getTestData() {
+        return testData;
+    }
+
+    public void setTestData(String testData) {
+        this.testData = testData;
+    }
+
     public ResponseType getResponseType() {
         return responseType;
     }
@@ -163,7 +176,7 @@ public class ControllerEndpoint extends ComponentEntity {
         Map<String, String> httpHeadersMap = new HashMap();
         if(StringUtils.isNotBlank(this.httpHeaders)) {
             for (String httpHeader : Arrays.asList(this.httpHeaders.split("\n"))) {
-                String[] headerParts = httpHeader.split(":");
+                String[] headerParts = httpHeader.split(":", 2);
                 httpHeadersMap.put(headerParts[0].trim(), headerParts[1].trim());
             }
         }
@@ -194,6 +207,13 @@ public class ControllerEndpoint extends ComponentEntity {
     @Override
     public Collection<String> contentProperties() {
         return contentProperties;
+    }
+
+    public ControllerEndpoint(Long organizationId, String moduleName, String subPath, HttpMethod httpMethod) {
+        super(organizationId);
+        this.subPath = subPath;
+        this.httpMethod = httpMethod;
+        this.moduleName = moduleName;
     }
 
 }

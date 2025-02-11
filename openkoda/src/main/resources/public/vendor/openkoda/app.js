@@ -205,6 +205,31 @@ app.submitToUrlAndReplace = function( domForm , targetUrl) {
     $.post(postParam);
 };
 
+app.submitToUrlAndReplaceAlways = function( domForm , targetUrl) {
+    app.submitToUrlAndReplaceAlwaysWithSelector(domForm, targetUrl, '.form-parent');
+};
+
+app.submitToUrlAndReplaceAlwaysWithSelector = function( domForm , targetUrl, replaceSelector) {
+    $(domForm).dirty("setAsClean");
+    let form = $(domForm);
+    let formParent = form.closest(replaceSelector);
+    let postParam = {
+        url : targetUrl,
+        data : form.serialize(),
+        success : (data) => {
+            if (app.assertNotRedirectToLogin(data)) {
+                formParent.replaceWith( data );
+            }
+        },
+        error : (data) => {
+            if (app.assertNotRedirectToLogin(data)) {
+                formParent.replaceWith( data );
+            }
+        }
+    };
+    $.post(postParam);
+}
+
 app.confirmAndSubmitAndCallback = function(confirmText, domForm, callback ) {
   $(domForm).dirty("setAsClean");
   var confirmation = confirm(confirmText);
@@ -258,6 +283,9 @@ app.confirmAndSubmit = function( confirmText, domForm ) {
 };
 
 app.dictionaryToOptions = function (dictionaryName, fieldName, selectedValue, showDefault, defaultText, isMultiselect = false) {
+    if(selectedValue != null && typeof selectedValue == 'object') {
+        selectedValue = selectedValue.map(val => val.id).join(',');
+    }
     let a = commonDictionaries[dictionaryName];
     let result = showDefault ? "<option value=''>" + defaultText + "</option>" : "";
     try {
@@ -326,7 +354,7 @@ app.createFileGalleryCard = function(fieldName, file, selected, multipleSelectio
     let callback = `data => app.removeElemOnSuccess(&quot;${cardId}&quot;, data, function() {alert(&quot;File could not be deleted.&quot;)})`;
     let deleteButton = "";
     let checkbox = "";
-    let select = `<div style='padding:5px;' class=''><span style='display:inline-block;vertical-align: baseline; width:1.25em;'><input type='${fieldType}' name='${fieldName}' value='${file.id}' ${selectedPart}/></span>Select<br/>`;
+    let select = `<div style='padding:5px;' class=''><span style='display:inline-block;vertical-align: baseline; width:1.25em;'><input type='${fieldType}' name='${fieldName}' value='${file.id}' ${selectedPart}/></span>Select`;
     let divClose = "</div>";
     if(entityRelated) {
         deleteButton = `<button type='button' class='files-btn btn btn-i btn-sm mr-1' onclick='app.confirmSubmitToUrlAndCallback(&quot;${confirmationText}&quot;, this.form, &quot;${file.deleteUrl}&quot;,${callback})'><i class='fas fa-trash-alt'></i></button>`;
@@ -342,6 +370,8 @@ app.createFileGalleryCard = function(fieldName, file, selected, multipleSelectio
         contentType = `<video controls width='100%' height='150'><source src='${file.downloadUrl}'></video>`;
     } else if (file.contentType.indexOf("application/pdf") === 0) {
         contentType = `<i class='fas fa-file-pdf fa-4x'></i>`;
+    } else {
+        contentType = `<i class='fas fa-file fa-4x'></i>`;
     }
 
     return `<div id='${cardId}' class='card file-card'>
@@ -385,7 +415,7 @@ app.dictionaryToFileGallery = function(dictionaryName, fieldName, selectedValues
 
    let a = commonDictionaries[dictionaryName];
    let result = "";
-   selectedValuesArrayWithStringIds = selectedValuesArray == null ? [] : selectedValuesArray.map(a => a + "");
+   selectedValuesArrayWithStringIds = selectedValuesArray == null || typeof selectedValuesArray === 'string' ? [] : selectedValuesArray.map(a => a + "");
    let allowedContentTypeArray = allowedContentTypesCommaSeparated.split(',');
 
    for (e in a) {
@@ -446,8 +476,12 @@ app.dictionaryToCheckboxTableGrouped = function (dictionaryName, fieldName, sele
 
 app.dictionaryToCheckboxTable = function (dictionaryName, fieldName, selectedValuesArray) {
     let a = commonDictionaries[dictionaryName];
+    if(typeof selectedValuesArray == 'string') {
+        selectedValuesArray = selectedValuesArray.split(",");
+    }
     selectedValuesArrayWithStringIds = selectedValuesArray == null ? [] : selectedValuesArray.map(a => a + "");
-    let arr = JSON.parse(a);
+    let arr = a instanceof Object ? new Map(Object.entries(a)) : JSON.parse(a);
+    //gigamerge: let arr = a instanceof Object ? Object.entries(a).map(([ key, val ]) => ({ k: key, v: val })) : JSON.parse(a);
     return app.getCheckboxTableRows(arr, fieldName);
  };
 
@@ -459,7 +493,7 @@ app.getCheckboxTableRows = function (arr, fieldName, cat = null) {
             return;
         }
         
-        let row = Object.hasOwn(e, 'v') ? e['v'] : a[e];
+        let row = Object.hasOwn(e, 'v') ? e['v'] : e;
         let isArray = Array.isArray(row);
         let labels = "";
         if (isArray) {
@@ -495,8 +529,8 @@ app.dictionaryTableHeader = function(dictionaryName){
     return result;
 };
 
-app.populateSelect = function( selectId, fieldName, fieldValue, datalistId, showDefault, defaultText, disableOptions) {
-    let elem = document.getElementById(selectId);
+app.populateSelect = function( selector, fieldName, fieldValue, datalistId, showDefault, defaultText, disableOptions) {
+    let elem = document.querySelector(selector);
     elem.innerHTML = app.dictionaryToOptions(datalistId, fieldName, fieldValue, showDefault, defaultText);
 };
 
@@ -621,7 +655,7 @@ app.showCheckboxAlert = function (checkboxId, alertMsg) {
 app.wrapCheckboxSectionAndShowIfAllGroupVisible = function (allSelector, elementSelector, collapseId, isVisible) {
     $(document).ready(function(){
         let groupVisible = $("div[class*='" + allSelector + "']").css("display") === "block";
-        $("div[class*=" + elementSelector).wrapAll( "<div class='collapse" + (isVisible ? " show" : "") + "' id='" + collapseId + "' />");
+        $("div[class*=" + elementSelector).wrapAll( "<div class='collapse" + (isVisible != null && isVisible ? " show" : "") + "' id='" + collapseId + "' />");
         $("div[class*=" + elementSelector).css("display", (groupVisible ? "block" : "none"));
     });
 }
@@ -636,13 +670,33 @@ app.wrapCheckboxSection = function (elementSelector, collapseId, isVisible) {
     });
 };
 
-app.wrapLinkSection = function (elementSelector, collapseId, isVisible) {
+app.wrapLinkSection = function (formId, elementSelector, collapseId, isVisible) {
     if(isVisible) {
-        $("div[class*=" + elementSelector).css("display", "block");
+        $(`#${formId} [class*="${elementSelector}"]`).css("display", "block");
     }
     $(document).ready(function(){
-        $("div[class*=" + elementSelector).wrapAll( "<div class='collapse" + (isVisible ? " show" : "") + "' id='" + collapseId + "' />");
-        $("div[class*=" + elementSelector).css("display", "block");
+        $(`#${formId} [class*="${elementSelector}"]`).wrapAll( "<div class='collapse" + (isVisible ? " show" : "") + "' id='" + collapseId + "' />");
+        $(`#${formId} [class*="${elementSelector}"]`).css("display", "block");
+
+    });
+};
+
+app.wrapSection = function (formId, fieldName, isVisible) {
+    // ignore dependant select multiselect elements
+    let wrappedElementsSelector =`#${formId} div[class*="form-group ${fieldName}"]`;
+    if(isVisible) {
+        $(wrappedElementsSelector).css("display", "block");
+    }
+    $(document).ready(function(){
+        $(wrappedElementsSelector).wrapAll( "<div class='collapse" + (isVisible ? " show" : "") + "' id='" + fieldName + "' />");
+        $(wrappedElementsSelector).css("display", "block");
+
+    });
+};
+
+app.wrapDivSection = function (parentDivSelector, childElementsSelector) {
+    $(document).ready(function(){
+        $(`${childElementsSelector}`).detach().appendTo(`${parentDivSelector}`)
     });
 };
 
@@ -659,8 +713,6 @@ app.redirectView = function (redirectUrl) {
     window.location.replace(redirectUrl);
 };
 app.initializeMap = function (mapid,fieldName) {
-    console.log("MapID:" + mapid);
-    console.log("FieldName: " + fieldName);
     var stringCord = document.getElementById(fieldName);
     var val = stringCord.value;
     var arrCord = val.match(/\w*\s*\(\s*(-?\d+[.\d]*)\s*(-?\d+[.\d]*)/);
@@ -672,7 +724,6 @@ app.initializeMap = function (mapid,fieldName) {
         cord = [+arrCord[1],+arrCord[2]];
 
     }
-    console.log(cord);
     var mymap = L.map(mapid).setView(cord, 13);
     L.tileLayer('https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token={accessToken}', {
         attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, <a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
@@ -691,8 +742,6 @@ app.initializeMap = function (mapid,fieldName) {
     mymap.on('click',
         function (e) {
             var pos = e.latlng;
-            console.log('map click event');
-            console.log('map delete event');
             mymap.removeLayer(marker);
             marker = L.marker(
                 pos,
@@ -701,14 +750,9 @@ app.initializeMap = function (mapid,fieldName) {
                     autoPan: 'true'
                 }
             );
-            console.log("event lang: " + e.latlng);
-            console.log("marker lang: " + marker.getLatLng());
             stringCord.value = "POINT ("+ marker.getLatLng().lat + " "+ marker.getLatLng().lng + ")";
             marker.on('drag', function (e) {
-                console.log('marker drag event');
                 stringCord.value = "POINT ("+ marker.getLatLng().lat + " "+ marker.getLatLng().lng + ")";
-                console.log("event lang: " + e.latlng);
-                console.log("marker lang: " + marker.getLatLng());
             });
             marker.on('click', L.DomEvent.stopPropagation);
             marker.addTo(mymap);
@@ -716,11 +760,7 @@ app.initializeMap = function (mapid,fieldName) {
         }
     );
     marker.on('drag', function (e) {
-        console.log('marker drag event');
         stringCord.value  = "POINT ("+ marker.getLatLng().lat + " "+ marker.getLatLng().lng + ")";
-        console.log("event lang: " + e.latlng);
-        console.log("marker lang: " + marker.getLatLng());
-
         marker.on('click', L.DomEvent.stopPropagation);
         marker.addTo(mymap);
     });
@@ -860,19 +900,6 @@ app.subscribeToChannel = function(channelName, handler) {
     } else {
         app.stompClient.subscribe(channelName , handler);
     }
-}
-
-app.initHtmlIdHolder = function(frontendResourceId, editorId, selector) {
-    if (frontendResourceId == null) {
-        return;
-    }
-    const idHolder = document.createElement('input');
-    idHolder.name = 'idConnector';
-    idHolder.type = 'hidden';
-    idHolder.setAttribute('data-resourceid', frontendResourceId);
-    idHolder.setAttribute('data-editorid', editorId);
-    idHolder.setAttribute('data-restored', false);
-    document.querySelector(selector).appendChild(idHolder);
 }
 
 app.passCurrentQueryParams = function (url) {

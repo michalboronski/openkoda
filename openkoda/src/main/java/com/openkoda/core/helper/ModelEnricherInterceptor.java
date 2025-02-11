@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2016-2023, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
+Copyright (c) 2016-2024, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation
@@ -21,6 +21,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 package com.openkoda.core.helper;
 
+import com.google.common.net.HttpHeaders;
 import com.openkoda.controller.common.PageAttributes;
 import com.openkoda.controller.notification.NotificationController;
 import com.openkoda.core.cache.ModelCache;
@@ -61,8 +62,9 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 import static com.openkoda.controller.common.PageAttributes.*;
-import static com.openkoda.controller.common.URLConstants.DEBUG_MODEL;
+import static com.openkoda.controller.common.URLConstants.DEBUG_MODE;
 import static com.openkoda.controller.common.URLConstants.EXTERNAL_SESSION_ID;
+import static org.springframework.security.web.header.writers.frameoptions.XFrameOptionsHeaderWriter.XFrameOptionsMode.SAMEORIGIN;
 /* TODO: move to correct package */
 /**
  * <p>ModelEnricherInterceptor class.</p>
@@ -97,6 +99,8 @@ public class ModelEnricherInterceptor implements ReadableCode, LoggingComponentW
     String plainLayoutName;
     @Value("${default.layout.embedded:embedded}")
     String embeddedLayoutName;
+    @Value("${default.layout.table:table}")
+    String tableLayoutName;
 
     @Inject
     SessionService sessionService;
@@ -166,6 +170,12 @@ public class ModelEnricherInterceptor implements ReadableCode, LoggingComponentW
     @Override
     public void postHandle(HttpServletRequest request, HttpServletResponse response, Object handler, ModelAndView modelAndView) throws Exception {
         debug("[postHandle]");
+
+//        set x-frame-options manually if custom value not set i.e. as webEndpoint configuration
+        if(!response.containsHeader(HttpHeaders.X_FRAME_OPTIONS)) {
+            response.setHeader(HttpHeaders.X_FRAME_OPTIONS, SAMEORIGIN.name());
+        }
+
         if (modelAndView == null || StringUtils.startsWith(modelAndView.getViewName(), "redirect:") || modelAndView.getView() instanceof RedirectView) {
             return;
         }
@@ -251,8 +261,7 @@ public class ModelEnricherInterceptor implements ReadableCode, LoggingComponentW
         try {
             model.put(commonDictionaries.name, secureEntityDictionaryRepository.getCommonDictionaries());
         } catch (JSONException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            warn("[enrichModel] could not add common dictionaries to model, reason: {}", e.getMessage());
         }
         model.put(commonDictionariesNames.name, secureEntityDictionaryRepository.getCommonDictionariesNames());
         model.put(defaultLayout.name, pageLayout);
@@ -269,18 +278,21 @@ public class ModelEnricherInterceptor implements ReadableCode, LoggingComponentW
             Long userId = user.get().getUser().getId();
 
             Set<Long> organizationIds;
+            Set<Long> roleIds = new HashSet<>();
             if(orgId != null && user.get().getOrganizationIds().contains(orgId)) {
                 organizationIds = Collections.singleton(orgId);
+                roleIds.addAll(user.get().getOrganizationRoleIds().get(orgId));
             } else {
-                organizationIds = user.get().getOrganizationIds();
+                organizationIds = Set.of(OrganizationUser.nonExistingOrganizationId);
+                roleIds.addAll(user.get().getGlobalRolesIds());
             }
-            
+
             // perform following model addons only if it's not a 'widget' session/scope
             if(!requestSessionMeta.isWidget()) {
-                List<Notification> usersUnreadNotificationsList = notificationService.getUsersUnreadNotifications(userId, organizationIds, PageRequest.of(0, 5));
+                List<Notification> usersUnreadNotificationsList = notificationService.getUsersUnreadNotifications(userId, roleIds, organizationIds, PageRequest.of(0, 5));
       
                 String unreadNotificationsIdListString = notificationService.getIdListAsString(usersUnreadNotificationsList);
-                int unreadNotificationsNumber = notificationService.getUsersUnreadNotificationsNumber(userId, organizationIds);
+                int unreadNotificationsNumber = notificationService.getUsersUnreadNotificationsNumber(userId, roleIds, organizationIds);
       
                 model.put(readNotificationsList.name, null);
                 model.put(unreadNotificationsList.name, usersUnreadNotificationsList);
@@ -293,38 +305,55 @@ public class ModelEnricherInterceptor implements ReadableCode, LoggingComponentW
         
         
         debug("[enrichModel] <<< Enriched model");
-        if (isUser && user.get().hasGlobalPrivilege(Privilege.canAccessGlobalSettings) && request.getParameterMap().containsKey(DEBUG_MODEL)) {
-            modelAndView.setViewName("model");
-            String s = JsonHelper.toDebugJson(existingModel);
-            modelAndView.getModel().clear();
-            modelAndView.getModel().put("modelJson", s);
+        if (isUser && user.get().hasGlobalPrivilege(Privilege.canAccessGlobalSettings) && request.getParameterMap().containsKey(DEBUG_MODE)) {
+            if ("model".equals(request.getParameter(DEBUG_MODE))) {
+                modelAndView.setViewName("model");
+                String s = JsonHelper.toDebugJson(existingModel);
+                modelAndView.getModel().clear();
+                modelAndView.getModel().put("modelJson", s);
+            } else if ("form".equals(request.getParameter(DEBUG_MODE))) {
+                modelAndView.getModel().put(_debugForm.name, true);
+            }
         }
-        
+
         ModelCache dashboardModel = new ModelCache();
         dashboardModel.setModel(model);
         return dashboardModel;
     }
 
     private String detectPageLayout(HttpServletRequest request) {
+        debug("[detectPageLayout] params [{}], headers [{}]", request.getParameterNames(), request.getHeaderNames());
         String pageLayoutParameter = request.getParameter("__view");
-
+        debug("[detectPageLayout] Page layout : [{}]", pageLayoutParameter);
         if (pageLayoutParameter != null) {
             switch (pageLayoutParameter) {
                 case "plain":
+                    debug("[detectPageLayout] using plain layout");
                     return plainLayoutName;
                 case "embedded":
+                    debug("[detectPageLayout] using embedded layout");
                     return embeddedLayoutName;
+                case "table":
+                    debug("[detectPageLayout] using table layout");
+                    return tableLayoutName;
             }
         } else {
             String referer = request.getHeader("Referer");
             if (referer != null) {
                 if (referer.contains("__view=plain")) {
+                    debug("[detectPageLayout] using plain layout, Referer [{}]", referer);
                     return plainLayoutName;
                 } else if (referer.contains("__view=embedded")) {
+                    debug("[detectPageLayout] using embedded layout, Referer [{}]", referer);
                     return embeddedLayoutName;
+                } else if (referer.contains("__view=table")) {
+                    debug("[detectPageLayout] using table layout, Referer [{}]", referer);
+                    return tableLayoutName;
                 }
             }
         }
+        
+        debug("[detectPageLayout] using default layout [{}]", defaultLayoutName);
         return defaultLayoutName;
     }
 

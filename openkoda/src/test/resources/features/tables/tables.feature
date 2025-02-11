@@ -28,7 +28,7 @@ Feature: Tables
       | /html/audit/all             | createdOn         | lexic    | /html/audit/all?audit_page=0&audit_size=20&audit_sort=createdOn,ASC&audit_search=                               |
       | /html/audit/all             | ipAddress         | lexic    | /html/audit/all?audit_page=0&audit_size=20&audit_sort=ipAddress,ASC&audit_search=                               |
       | /html/role/all              | name              | lexic    | /html/role/all?role_page=0&role_size=20&role_sort=name,ASC&role_search=                                         |
-      | /html/frontendResource/all  | name              | lexic    | /html/frontendResource/all?obj_page=0&obj_size=20&obj_sort=name,ASC&obj_search=                             |
+      | /html/frontendResource/all  | name              | lexic    | /html/frontendResource/all?obj_page=0&obj_size=20&obj_sort=name,ASC&table_filter=                             |
       | /html/eventListener/all     | eventClassName    | lexic    | /html/eventListener/all?event_page=0&event_size=20&event_sort=eventClassName,ASC&event_search=                  |
       | /html/eventListener/all     | eventName         | lexic    | /html/eventListener/all?event_page=0&event_size=20&event_sort=eventName,ASC&event_search=                       |
       | /html/eventListener/all     | consumerClassName | lexic    | /html/eventListener/all?event_page=0&event_size=20&event_sort=consumerClassName,ASC&event_search=               |
@@ -37,7 +37,7 @@ Feature: Tables
       | /html/organization/all      | id                | linear   | /html/organization/all?organization_page=0&organization_size=20&organization_sort=id,ASC&organization_search=   |
       | /html/audit/all             | id                | linear   | /html/audit/all?audit_page=0&audit_size=20&audit_sort=id,ASC&audit_search=                                      |
       | /html/role/all              | id                | linear   | /html/role/all?role_page=0&role_size=20&role_sort=id,ASC&role_search=                                           |
-      | /html/frontendResource/all  | id                | linear   | /html/frontendResource/all?obj_page=0&obj_size=20&obj_sort=id,ASC&obj_search=                                    |
+      | /html/frontendResource/all  | id                | linear   | /html/frontendResource/all?obj_page=0&obj_size=20&obj_sort=id,ASC&table_filter=                                    |
       | /html/eventListener/all     | id                | linear   | /html/eventListener/all?event_page=0&event_size=20&event_sort=id,ASC&event_search=                              |
       | /html/scheduler/all         | id                | linear   | /html/scheduler/all?scheduler_page=0&scheduler_size=20&scheduler_sort=id,ASC&scheduler_search=                  |
 

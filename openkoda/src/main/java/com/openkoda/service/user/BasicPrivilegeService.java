@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2016-2023, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
+Copyright (c) 2016-2024, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation
@@ -21,13 +21,13 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 package com.openkoda.service.user;
 
-import com.openkoda.controller.ComponentProvider;
-import com.openkoda.core.security.HasSecurityRules;
-import com.openkoda.model.DynamicPrivilege;
-import com.openkoda.model.PrivilegeGroup;
-import com.openkoda.repository.user.DynamicPrivilegeRepository;
-import jakarta.inject.Inject;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+
 import org.apache.commons.lang3.NotImplementedException;
+import org.hibernate.annotations.Cache;
+import org.springframework.cache.annotation.CacheConfig;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
@@ -40,10 +40,16 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.BindingResult;
 
-import java.util.List;
-import java.util.Optional;
+import com.openkoda.controller.ComponentProvider;
+import com.openkoda.core.security.HasSecurityRules;
+import com.openkoda.model.DynamicPrivilege;
+import com.openkoda.model.PrivilegeGroup;
+import com.openkoda.repository.user.DynamicPrivilegeRepository;
+
+import jakarta.inject.Inject;
 
 /**
  * Service for managing basic CRUD like opeartion related to DynamicPrivileges. Should be use instead of plain DynamicPrivilegeRepository to achieve Cacheable mechanism 

@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" xmlns="http://www.w3.org/1999/html" lang="en"
+      layout:decorate="~{${defaultLayout}}">
+<body>
+<div class="container-fluid">
+
+    <div layout:fragment="content" th:attr="data-menu-item='dashboard'">
+
+        <th:block th:if="${!#lists.isEmpty(@htmlCRUDControllerConfigurationMap.getExposedSorted(organizationEntityId))}">
+            <h6 class="pb-2">Manage Your Data</h6>
+            <div class="row" id="registered-cruds">
+                <th:block th:each="entry : ${@htmlCRUDControllerConfigurationMap.getExposedSorted(organizationEntityId)}">
+                    <div class="col-lg-2">
+                        <a class="card border-right-primary shadow mb-4 card-link" th:href="${@url.all(organizationEntityId, entry.key)}">
+                            <div class="card-body d-flex align-items-center justify-content-center">
+                                <h4 class="font-weight-bold text-body" th:text="${@messages.getFieldLabel(entry.key, entry.key)}"></h4>
+                            </div>
+                        </a>
+                    </div>
+                </th:block>
+            </div>
+        </th:block>
+    </div>
+</div>
+</body>
+</html>

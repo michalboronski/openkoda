@@ -1,16 +1,40 @@
+/*
+MIT License
+
+Copyright (c) 2016-2024, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
+documentation files (the "Software"), to deal in the Software without restriction, including without limitation
+the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software,
+and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice
+shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR
+A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS
+OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR
+IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+*/
+
 package com.openkoda.service.dynamicentity;
 
 import aj.org.objectweb.asm.Opcodes;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.openkoda.core.flow.LoggingComponent;
+import com.openkoda.core.form.FieldDbType;
 import com.openkoda.core.form.FieldType;
 import com.openkoda.core.form.FrontendMappingDefinition;
 import com.openkoda.core.form.FrontendMappingFieldDefinition;
 import com.openkoda.core.service.form.FormService;
 import com.openkoda.dto.CanonicalObject;
+import com.openkoda.model.User;
 import com.openkoda.model.common.OpenkodaEntity;
 import com.openkoda.model.common.SearchableRepositoryMetadata;
 import com.openkoda.model.component.Form;
+import com.openkoda.model.file.EntityWithFiles;
 import com.openkoda.model.file.File;
 import com.openkoda.repository.SearchableRepositories;
 import com.openkoda.repository.SecureRepository;
@@ -63,8 +87,6 @@ public class DynamicEntityRegistrationService implements LoggingComponent {
     @PersistenceContext
     EntityManager em;
     
-    //final static ObjectMapper om = new ObjectMapper().registerModule(new JSR310Module());
-
     public void registerDynamicRepositories(boolean proceed){
         if(!proceed){
             return;
@@ -92,7 +114,7 @@ public class DynamicEntityRegistrationService implements LoggingComponent {
         for(Form form : forms) {
             String formName = form.getName();
             String tableName = form.getTableName();
-            List<FrontendMappingFieldDefinition> fields = Arrays.asList(frontendMappingDefinitions.get(form.getName()).getDbTypeFields());
+            List<FrontendMappingFieldDefinition> fields = Arrays.asList(frontendMappingDefinitions.get(form.getName()).getDbTypeFieldsImplicitlyDefined());
             DynamicEntityDescriptorFactory.create(formName, tableName, fields, timeMillis);
             generatedEntities++;
         }
@@ -107,7 +129,7 @@ public class DynamicEntityRegistrationService implements LoggingComponent {
 
 //        create unloaded types
         for (DynamicEntityDescriptor descriptor : DynamicEntityDescriptorFactory.loadableInstances()) {
-            Tuple4<DynamicType.Unloaded<OpenkodaEntity>, String, String, List<String>> dynamicEntity = createDynamicEntityType(descriptor.getSuffixedEntityClassName(), descriptor.getTableName(), descriptor.getFields());
+            Tuple4<DynamicType.Unloaded<OpenkodaEntity>, String, String, List<String>> dynamicEntity = createDynamicEntityType(descriptor);
             unloadedClasses.put(descriptor.getEntityKey(), dynamicEntity);
         }
 
@@ -142,9 +164,15 @@ public class DynamicEntityRegistrationService implements LoggingComponent {
     }
 
     private static <O extends OpenkodaEntity> Tuple4<DynamicType.Unloaded<OpenkodaEntity>, String, String, List<String>> createDynamicEntityType(
-            String name, String tableName, Collection<FrontendMappingFieldDefinition> fields) {
+            DynamicEntityDescriptor dynamicEntityDescriptor) {
+        String name = dynamicEntityDescriptor.getSuffixedEntityClassName();
+        String tableName = dynamicEntityDescriptor.getTableName();
+        Collection<FrontendMappingFieldDefinition> fields = dynamicEntityDescriptor.getFields();
+        String entityKey = dynamicEntityDescriptor.getEntityKey();
         debugLogger.debug("[createDynamicEntityType] {} {}", name, tableName);
 
+        TypeDescription userTypeDescription = TypeDescription.ForLoadedType.of(User.class);
+        TypeDescription entityWithFilesType = TypeDescription.ForLoadedType.of(EntityWithFiles.class);
         AnnotationDescription entity = AnnotationDescription.Builder.ofType(Entity.class)
                 .build();
         AnnotationDescription.Builder formulaType = AnnotationDescription.Builder.ofType(Formula.class);
@@ -217,56 +245,98 @@ public class DynamicEntityRegistrationService implements LoggingComponent {
 
             for(FrontendMappingFieldDefinition field : fields) {
                 Type fieldJavaType = getFieldJavaType(field);
-                String dbColumnName = toColumnName(field.getName());
+                String dbColumnName = toColumnName(field.getValueName());
 
-                if (field.getType().equals(FieldType.files)) {
-                    dynamicType = dynamicType.defineField("files", listOfType(File.class), PUBLIC)
+                FieldType type = field.getType();
+                if (type.equals(FieldType.files)) {
+                    String filesFieldName = "files";
+                    String filesIdFieldName = "filesId";
+                    //[adrysch] if there's need for multiple files fields in a entity, this is the place to start
+//                    String filesFieldName = field.getName();
+//                    String filesIdFieldName = field.getValueName();
+                    dynamicType = dynamicType.implement(entityWithFilesType);
+                    dynamicType = dynamicType.defineField(filesFieldName, listOfType(File.class), PUBLIC)
                             .annotateField(manyToManyAnnotation)
                             .annotateField(joinTableAnnotation)
                             .annotateField(jsonIgnoreAnnotation)
                             .annotateField(orderColumnAnnotation)
-                            .defineMethod("getFiles" , listOfType(File.class), PUBLIC).intercept(FieldAccessor.ofField("files"))
-                            .defineMethod("setFiles", void.class, PUBLIC).withParameter(listOfType(File.class)).intercept(FieldAccessor.ofField("files"));
-                    dynamicType = dynamicType.defineField(field.getName(), listOfType(Long.class), PUBLIC)
+                            .defineMethod(getGetterName(filesFieldName) , listOfType(File.class), PUBLIC).intercept(FieldAccessor.ofField(filesFieldName))
+                            .defineMethod(getSetterName(filesFieldName), void.class, PUBLIC).withParameter(listOfType(File.class)).intercept(FieldAccessor.ofField(filesFieldName));
+                    dynamicType = dynamicType.defineField(filesIdFieldName, listOfType(Long.class), PUBLIC)
                             .annotateField(columnAnnotation.define("name", "file_id").build())
                             .annotateField(elementCollectionAnnotation)
                             .annotateField(collectionTableAnnotation)
                             .annotateField(orderColumnAnnotation)
-                            .defineMethod("getFilesId", listOfType(Long.class), PUBLIC).intercept(FieldAccessor.ofField("filesId"))
-                            .defineMethod("setFilesId", void.class, PUBLIC).withParameter(listOfType(Long.class)).intercept(FieldAccessor.ofField("filesId"));
+                            .defineMethod(getGetterName(filesIdFieldName), listOfType(Long.class), PUBLIC).intercept(FieldAccessor.ofField(filesIdFieldName))
+                            .defineMethod(getSetterName(filesIdFieldName), void.class, PUBLIC).withParameter(listOfType(Long.class)).intercept(FieldAccessor.ofField(filesIdFieldName));
                 } else {
-                    if (field.getType().getDbType().equals(FieldType.text.getDbType())) {
+                    FieldDbType dbType = type.getDbType();
+                    if (dbType != null && dbType.equals(FieldType.text.getDbType())) {
                         descriptionFormula.append("||' '||").append(String.format("COALESCE(%s,'')", dbColumnName));
                     }
-                    if (field.getType().getDbType().getColumnType().equals(FieldType.text.getDbType().getColumnType())) {
+                    if (dbType != null && dbType.getColumnType().equals(FieldType.text.getDbType().getColumnType())) {
                         searchIndexFormula.append("||' '||").append(String.format("'%s:'||COALESCE(%s,'')", field.getName(), dbColumnName));
-                    } else if (field.getType().equals(FieldType.many_to_one)) {
+                    } else if (type.equals(FieldType.many_to_one)) {
                         searchIndexFormula.append("||' '||").append(String.format("'%s:'||COALESCE(cast (%s as varchar),'')", field.getName(), dbColumnName));
 
-                        DynamicEntityDescriptor instanceByEntityKey = DynamicEntityDescriptorFactory.getInstanceByEntityKey(field.referencedEntityKey);
-                        if(instanceByEntityKey != null) {
-                            String referenceFieldName = StringUtils.substringBeforeLast(toColumnName(field.getName()), "_");
-                            TypeDescription.Latent referenceTypeDescription = instanceByEntityKey.getTypeDescription();
-                            includeTypes.add(field.referencedEntityKey);
-                            dynamicType = dynamicType.defineField(referenceFieldName, referenceTypeDescription, Opcodes.ACC_PUBLIC)
+                        if ("user".equals(field.referencedEntityKey)) {
+                            dynamicType = dynamicType.defineField(field.getName(), userTypeDescription, Opcodes.ACC_PUBLIC)
                                     .annotateField(manyToOneAnnotation)
-                                    .annotateField(joinColumnNotUpdatable.define("name", toColumnName(field.getName())).build())
-                                    .defineMethod(getGetterName(referenceFieldName), referenceTypeDescription, PUBLIC).intercept(FieldAccessor.ofField(referenceFieldName))
-                                    .defineMethod(getSetterName(referenceFieldName), void.class, PUBLIC).withParameter(referenceTypeDescription).intercept(FieldAccessor.ofField(referenceFieldName));
+                                    .annotateField(joinColumnNotUpdatable.define("name", toColumnName(field.getValueName())).build())
+                                    .defineMethod(getGetterName(field.getName()), userTypeDescription, PUBLIC).intercept(FieldAccessor.ofField(field.getName()))
+                                    .defineMethod(getSetterName(field.getName()), void.class, PUBLIC).withParameter(userTypeDescription).intercept(FieldAccessor.ofField(field.getName()));
+
+                        } else {
+                            DynamicEntityDescriptor instanceByEntityKey = DynamicEntityDescriptorFactory.getInstanceByEntityKey(field.referencedEntityKey);
+                            if (instanceByEntityKey != null) {
+                                TypeDescription.Latent referenceTypeDescription = instanceByEntityKey.getTypeDescription();
+                                includeTypes.add(field.referencedEntityKey);
+                                dynamicType = dynamicType.defineField(field.getName(), referenceTypeDescription, Opcodes.ACC_PUBLIC)
+                                        .annotateField(manyToOneAnnotation)
+                                        .annotateField(joinColumnNotUpdatable.define("name", toColumnName(field.getValueName())).build())
+                                        .defineMethod(getGetterName(field.getName()), referenceTypeDescription, PUBLIC).intercept(FieldAccessor.ofField(field.getName()))
+                                        .defineMethod(getSetterName(field.getName()), void.class, PUBLIC).withParameter(referenceTypeDescription).intercept(FieldAccessor.ofField(field.getName()));
+                            }
                         }
+                    } else if (type.equals(FieldType.one_to_many)) {
+                        DynamicEntityDescriptor instanceByEntityKey = DynamicEntityDescriptorFactory.getInstanceByEntityKey(field.referencedEntityKey);
+                        if (instanceByEntityKey != null) {
+                            TypeDescription.Latent referenceTypeDescription = instanceByEntityKey.getTypeDescription();
+
+                            AnnotationDescription oneToManyAnnotation = AnnotationDescription.Builder.ofType(OneToMany.class)
+                                    .define("mappedBy", field.mappedByFieldName)
+                                    .define("fetch", FetchType.LAZY)
+                                    .defineEnumerationArray("cascade", CascadeType.class, CascadeType.ALL)
+                                    .define("orphanRemoval", true)
+                                    .define("targetEntity", referenceTypeDescription)
+                                    .build();
+
+                            String referenceFieldName = StringUtils.substringBeforeLast(toColumnName(field.getName()), "_");
+                            TypeDescription.Generic collection = TypeDescription.Generic.Builder.parameterizedType(
+                                    TypeDescription.ForLoadedType.of(List.class),
+                                    referenceTypeDescription
+                            ).build();
+
+                            dynamicType = dynamicType.defineField(referenceFieldName, collection, Opcodes.ACC_PUBLIC)
+                                    .annotateField(oneToManyAnnotation)
+                                    .defineMethod(getGetterName(referenceFieldName), collection, PUBLIC).intercept(FieldAccessor.ofField(referenceFieldName))
+                                    .defineMethod(getSetterName(referenceFieldName), void.class, PUBLIC).withParameter(collection).intercept(FieldAccessor.ofField(referenceFieldName))
+                            ;
+                        }
+                        continue; // no more actions needed fo one-to-many relationship, this if branch has everything that is needed
                     }
                     AnnotationDescription fieldDbAnnotation =
                     StringUtils.isNotBlank(field.sqlFormula) ?
                         formulaType.define("value", String.format("(%s)", field.sqlFormula)).build():
                         columnAnnotation.define("name", dbColumnName).build();
 
-                    dynamicType = dynamicType.defineField(field.getName(), fieldJavaType, PUBLIC)
+                    dynamicType = dynamicType.defineField(field.getValueName(), fieldJavaType, PUBLIC)
                                 .annotateField(fieldDbAnnotation)
-                                .defineMethod(getGetterName(field.getName()), fieldJavaType, PUBLIC).intercept(FieldAccessor.ofField(field.getName()))
-                                .defineMethod(getSetterName(field.getName()), void.class, PUBLIC).withParameter(fieldJavaType).intercept(FieldAccessor.ofField(field.getName()));
+                                .defineMethod(getGetterName(field.getValueName()), fieldJavaType, PUBLIC).intercept(FieldAccessor.ofField(field.getValueName()))
+                                .defineMethod(getSetterName(field.getValueName()), void.class, PUBLIC).withParameter(fieldJavaType).intercept(FieldAccessor.ofField(field.getValueName()));
                 }
             }
-             entityType = dynamicType
+            entityType = dynamicType
                      .defineField(REQUIRED_READ_PRIVILEGE, String.class, PROTECTED)
                      .annotateField(formula)
                      .defineField(REQUIRED_WRITE_PRIVILEGE, String.class, PROTECTED)
@@ -276,12 +346,11 @@ public class DynamicEntityRegistrationService implements LoggingComponent {
                      .defineMethod("getRequiredWritePrivilege", String.class, PUBLIC)
                      .intercept(FieldAccessor.ofBeanProperty())
                      .make();
-
         } catch (NoSuchMethodException e) {
             debugLogger.error("[createDynamicEntityType]", e);
         }
 
-        return Tuples.of(entityType, String.format("(''||id%s)", descriptionFormula), String.format("(''||'id:'||id%s)", searchIndexFormula),includeTypes);
+        return Tuples.of(entityType, String.format("(''||id%s)", descriptionFormula), String.format("('%s:'||id %s)", entityKey, searchIndexFormula),includeTypes);
     }
 
     private static <T extends OpenkodaEntity> Class<SecureRepository<T>> createAndLoadDynamicRepository(Class<T> entity,
@@ -324,7 +393,7 @@ public class DynamicEntityRegistrationService implements LoggingComponent {
 
         default String notificationMessage() {
             StringBuilder builder = new StringBuilder();
-            builder.append(this.getClass().getSimpleName());
+            //builder.append(this.getClass().getSimpleName());
             builder.append("{");
             try {
                 List<String> fields = java.util.stream.Stream.of(this.getClass().getDeclaredFields())
@@ -333,8 +402,7 @@ public class DynamicEntityRegistrationService implements LoggingComponent {
                     try {
                         return String.format("\"%s\":\"%s\"", f.getName(),f.get(this) != null ? f.get(this).toString() : "null");
                     } catch (IllegalArgumentException | IllegalAccessException e) {
-                        // TODO Auto-generated catch block
-                        e.printStackTrace();
+                        debugLogger.warn("[notificationMessage] could not create default notification message, returning empty string, reason: {}", e.getMessage());
                         return "";
                     }
                 }).toList();
@@ -366,6 +434,9 @@ public class DynamicEntityRegistrationService implements LoggingComponent {
     }
 
     private static Type getFieldJavaType(FrontendMappingFieldDefinition field) {
+        if (field.type == FieldType.one_to_many) {
+            return List.class;
+        }
         if (field.type.getDbType().getColumnType().equals("varchar")) {
             return String.class;
         }

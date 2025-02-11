@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2016-2023, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
+Copyright (c) 2016-2024, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation
@@ -21,16 +21,20 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 package com.openkoda.service.export.converter.impl;
 
-import com.openkoda.core.flow.LoggingComponent;
-import com.openkoda.model.DynamicPrivilege;
-import com.openkoda.service.export.dto.PrivilegeConversionDto;
-import org.springframework.stereotype.Component;
+import static com.openkoda.service.export.FolderPathConstants.EXPORT_CODE_PATH_;
+import static com.openkoda.service.export.FolderPathConstants.EXPORT_MIGRATION_PATH_;
+import static com.openkoda.service.export.FolderPathConstants.EXPORT_PRIVILEGE_PATH_;
+import static com.openkoda.service.export.FolderPathConstants.FORM_;
 
 import java.util.List;
 import java.util.Set;
 import java.util.zip.ZipOutputStream;
 
-import static com.openkoda.service.export.FolderPathConstants.*;
+import org.springframework.stereotype.Component;
+
+import com.openkoda.core.flow.LoggingComponent;
+import com.openkoda.model.DynamicPrivilege;
+import com.openkoda.service.export.dto.PrivilegeConversionDto;
 
 @Component
 public class PrivilegeEntityToYamlConverter extends AbstractEntityToYamlConverter<DynamicPrivilege, PrivilegeConversionDto> implements LoggingComponent   {

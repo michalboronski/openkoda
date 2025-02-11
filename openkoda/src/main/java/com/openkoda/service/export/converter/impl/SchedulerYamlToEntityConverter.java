@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2016-2023, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
+Copyright (c) 2016-2024, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation
@@ -23,12 +23,20 @@ package com.openkoda.service.export.converter.impl;
 
 import com.openkoda.controller.ComponentProvider;
 import com.openkoda.model.component.Scheduler;
+import com.openkoda.model.component.event.EventListenerEntry;
+import com.openkoda.service.export.ClasspathComponentImportService;
 import com.openkoda.service.export.converter.YamlToEntityConverter;
 import com.openkoda.service.export.converter.YamlToEntityParentConverter;
+import com.openkoda.service.export.dto.EventListenerEntryConversionDto;
 import com.openkoda.service.export.dto.SchedulerConversionDto;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.data.domain.Example;
 import org.springframework.stereotype.Component;
 
 import java.util.Map;
+import java.util.Optional;
+
+import static com.openkoda.service.export.ClasspathComponentImportService.SyncStatus.*;
 
 @Component
 @YamlToEntityParentConverter(dtoClass = SchedulerConversionDto.class)
@@ -54,4 +62,19 @@ public class SchedulerYamlToEntityConverter extends ComponentProvider implements
         services.scheduler.schedule(scheduler);
         return scheduler;
     }
+
+    @Override
+    public ClasspathComponentImportService.SyncStatus checkSyncStatus(SchedulerConversionDto dto) {
+        Scheduler s = repositories.unsecure.scheduler.findByOrganizationIdAndEventDataAndCronExpression(
+                dto.getOrganizationId(),
+                        dto.getEventData(),
+                        dto.getCronExpression());
+        if (s == null) {
+            return NEW;
+        }
+
+        boolean same = s.isOnMasterOnly() == dto.isOnMasterOnly();
+        return same ? UNCHANGED : MODIFIED;
+    }
+
 }

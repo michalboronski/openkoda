@@ -1,0 +1,11 @@
+!!com.openkoda.service.export.dto.FormConversionDto
+"code": "code/form/Agent.js"
+"module": "core"
+"name": "Agent"
+"organizationId": !!null "null"
+"readPrivilege": "manageOrgData"
+"registerApiCrudController": !!bool "true"
+"registerHtmlCrudController": !!bool "true"
+"tableColumns": "agentId,firstName,lastName,contactNumber,email,commissionRate"
+"tableName": "dynamic_AGENT"
+"writePrivilege": "manageOrgData"

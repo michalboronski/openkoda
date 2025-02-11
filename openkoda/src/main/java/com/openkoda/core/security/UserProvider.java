@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2016-2023, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
+Copyright (c) 2016-2024, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation
@@ -25,10 +25,11 @@ import com.openkoda.controller.ComponentProvider;
 import com.openkoda.core.cache.RequestSessionCacheService;
 import com.openkoda.core.flow.Tuple;
 import com.openkoda.core.helper.PrivilegeHelper;
-import com.openkoda.dto.user.BasicUser;
+import com.openkoda.dto.user.BasicUserDto;
 import com.openkoda.model.User;
 import jakarta.annotation.PostConstruct;
 import jakarta.inject.Inject;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Scope;
@@ -62,13 +63,17 @@ public class UserProvider extends ComponentProvider {
     @Inject
     private static UserProvider instance;
 
+    public static UserProvider getInstance() {
+        return instance;
+    }
+    
     @PostConstruct
     private void init() {
         instance = this;
         services.applicationEvent.registerEventListener(USER_MODIFIED, this::markUserAsModified);
     }
 
-    private void markUserAsModified(BasicUser u) {
+    private void markUserAsModified(BasicUserDto u) {
         repositories.unsecure.user.setUserAsModified(u.getId());
     }
 
@@ -79,6 +84,10 @@ public class UserProvider extends ComponentProvider {
         }
         
         return Optional.of(user);
+    }
+    
+    public Optional<OrganizationUser> getInstanceFromContext() {
+        return getFromContext();
     }
 
     public static boolean isAuthenticated() {
@@ -173,13 +182,14 @@ public class UserProvider extends ComponentProvider {
         Set<String> globalRoles = new HashSet<>();
         Map<Long, Set<String>> organizationPrivileges = new HashMap<>();
         Map<Long, Set<String>> organizationRoles = new HashMap<>();
+        Map<Long, Set<Long>> organizationRoleIds = new HashMap<>();
         Map<Long, String> organizationNames = new LinkedHashMap<>();
         Collection<? extends GrantedAuthority> authorities = new ArrayList<>();
 
         UserDetails userDetails = new OrganizationUser(
                 "_job_", "",
                 true, true, true, true,
-                authorities, globalPrivileges, globalRoles, organizationPrivileges, organizationRoles, null,
+                authorities, globalPrivileges, globalRoles, organizationPrivileges, organizationRoles, organizationRoleIds, null,
                 organizationNames);
 
         Authentication a = new PreAuthenticatedAuthenticationToken(
@@ -196,7 +206,7 @@ public class UserProvider extends ComponentProvider {
         UserDetails userDetails = new OrganizationUser(
                 "_oauth_", "",
                 true, true, true, true,
-                Collections.EMPTY_LIST, globalPrivileges, Collections.EMPTY_SET, Collections.EMPTY_MAP, Collections.EMPTY_MAP, null,
+                Collections.EMPTY_LIST, globalPrivileges, Collections.EMPTY_SET, Collections.EMPTY_MAP, Collections.EMPTY_MAP, Collections.EMPTY_MAP, null,
                 Collections.EMPTY_MAP);
 
         Authentication a = new PreAuthenticatedAuthenticationToken(
@@ -213,7 +223,7 @@ public class UserProvider extends ComponentProvider {
         UserDetails userDetails = new OrganizationUser(
                 "_consumer_", "",
                 true, true, true, true,
-                Collections.EMPTY_LIST, globalPrivileges, Collections.EMPTY_SET, Collections.EMPTY_MAP, Collections.EMPTY_MAP, null,
+                Collections.EMPTY_LIST, globalPrivileges, Collections.EMPTY_SET, Collections.EMPTY_MAP, Collections.EMPTY_MAP, Collections.EMPTY_MAP, null,
                 Collections.EMPTY_MAP);
 
 

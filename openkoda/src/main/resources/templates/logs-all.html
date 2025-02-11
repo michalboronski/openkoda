@@ -7,7 +7,7 @@
     <div layout:fragment="content" th:attr="data-menu-item='logs'">
         <nav th:replace="~{navigation-fragments::log-monitoring-nav-tabs('logs')}"></nav>
         <div class="card shadow mb-4">
-            <div class="card-header py-3 d-flex flex-row justify-content-between">
+            <div class="card-header py-3 d-flex flex-row align-items-start justify-content-end">
                 <div class="dropdown no-arrow dropdown-sm">
                     <a class="dropdown-toggle" href="#" role="button" id="logMenuLink"
                        data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -19,9 +19,11 @@
                         <a class="dropdown-item" th:href="${@url.logsSettings()}">Settings</a>
                     </div>
                 </div>
-                <div class="card-header-buttons">
-                    <a class="btn-primary btn btn-sm" th:href="${@url.downloadLogs()}" download="logs.txt">Download</a>
-                    <a class="btn-primary btn btn-sm" th:href="${@url.logsSettings()}">Settings</a>
+                <div class="d-flex align-items-start ">
+                    <div class="card-header-buttons">
+                        <a class="btn-primary btn btn-sm" th:href="${@url.downloadLogs()}" download="logs.txt">Download</a>
+                        <a class="btn-primary btn btn-sm" th:href="${@url.logsSettings()}">Settings</a>
+                    </div>
                 </div>
             </div>
             <div class="card-body">

@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2016-2023, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
+Copyright (c) 2016-2024, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation
@@ -21,25 +21,35 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 package com.openkoda.repository;
 
+import com.openkoda.core.audit.AuditableEntityOperation;
 import com.openkoda.core.form.AbstractEntityForm;
 import com.openkoda.core.form.FrontendMappingFieldDefinition;
 import com.openkoda.core.repository.common.ScopedSecureRepository;
 import com.openkoda.core.repository.common.SearchableFunctionalRepositoryWithLongId;
 import com.openkoda.core.security.HasSecurityRules;
+import com.openkoda.core.service.event.EntityApplicationEvent;
 import com.openkoda.model.common.SearchableEntity;
 import com.openkoda.model.common.SearchableRepositoryMetadata;
+import org.springframework.context.annotation.Scope;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.stereotype.Component;
 import reactor.util.function.Tuple3;
 
 import java.util.List;
 import java.util.Set;
 
+@Component
+@Scope("prototype")
 public class SecureRepositoryWrapper<T extends SearchableEntity> implements ScopedSecureRepository<T> {
     private final SearchableFunctionalRepositoryWithLongId<T> wrapped;
     private final HasSecurityRules.SecurityScope scope;
 
+    public SecureRepositoryWrapper(SecureRepositoryWrapper wrapper) {
+        this.wrapped = wrapper.wrapped;
+        this.scope = wrapper.scope;
+    }
     public SecureRepositoryWrapper(SearchableFunctionalRepositoryWithLongId<T> wrapped, HasSecurityRules.SecurityScope scope) {
         this.wrapped = wrapped;
         this.scope = scope;
@@ -54,7 +64,7 @@ public class SecureRepositoryWrapper<T extends SearchableEntity> implements Scop
         return wrapped.search(scope, specification);
     }
 
-    
+
     public List<T> search(Long organizationId, Specification<T> specification) {
         return wrapped.search(scope, organizationId, specification);
     }
@@ -115,32 +125,40 @@ public class SecureRepositoryWrapper<T extends SearchableEntity> implements Scop
         return wrapped.findOne(scope, idOrEntityOrSpecification);
     }
 
-    
+    public String extractAsColumnConcatenation(Long id, String ... columns) {
+        return wrapped.extractAsColumnConcatenation(scope, id, columns);
+    }
+
+    public List<T> findAllById(Object idOrEntityOrSpecifications) {
+        return wrapped.findAllById(scope, idOrEntityOrSpecifications);
+    }
+
     public List<T> findAll() {
         return wrapped.findAll(scope);
     }
 
-    
+    @AuditableEntityOperation
     public <S extends T> S saveOne(S entity) {
         return wrapped.saveOne(scope, entity);
     }
 
-    
+    @AuditableEntityOperation
     public <S extends T> S saveForm(S entity, AbstractEntityForm form) {
         return wrapped.saveForm(scope, entity, form);
     }
 
-    
+    @AuditableEntityOperation
     public <S extends T> List<S> saveAll(Object entitiesCollection) {
         return wrapped.saveAll(scope, entitiesCollection);
     }
 
-    
+    @AuditableEntityOperation(category = EntityApplicationEvent.DELETED_CATEGORY)
     public boolean deleteOne(Object idOrEntity) {
         return wrapped.deleteOne(scope, idOrEntity);
     }
 
     
+    @AuditableEntityOperation(category = EntityApplicationEvent.DELETED_CATEGORY)
     public long deleteAll(Object idsOrEntitiesCollectionOrSpecification) {
         return wrapped.deleteAll(scope, idsOrEntitiesCollectionOrSpecification);
     }

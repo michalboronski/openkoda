@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2016-2023, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
+Copyright (c) 2016-2024, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation
@@ -21,24 +21,35 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 package com.openkoda.controller;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
+
 import com.openkoda.core.flow.Flow;
 import com.openkoda.core.security.HasSecurityRules;
 import com.openkoda.model.component.FrontendResource;
 import com.openkoda.repository.specifications.FrontendResourceSpecifications;
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 
 import static com.openkoda.controller.common.URLConstants.*;
 
 @RestController
 @RequestMapping({_HTML})
-public class ComponentsController extends ComponentProvider implements HasSecurityRules {
+public class ComponentsController extends AbstractComponentsController implements HasSecurityRules {
+
+    @Value("${components.export.syncWithFilesystem:false}")
+    private boolean syncWithFilesystem;
 
 
     @PreAuthorize(CHECK_CAN_MANAGE_ORG_DATA)
@@ -166,9 +177,25 @@ public class ComponentsController extends ComponentProvider implements HasSecuri
     @RequestMapping(value = _COMPONENT + _IMPORT + _ZIP, method = RequestMethod.POST)
     public Object importComponentsZip(@RequestParam("file") MultipartFile file, @RequestParam(value = "delete", defaultValue = "false") Boolean delete) {
         debug("[importComponentsZip]");
+        return super.importComponentsZip(file, delete);
+    }
+
+    @PreAuthorize(CHECK_CAN_MANAGE_BACKEND)
+    @Transactional
+    @RequestMapping(value = _COMPONENT + _RELOAD, method = RequestMethod.POST)
+    public Object reloadFromResources(@RequestParam("component") String componentPath) {
+        debug("[reloadFromResources]");
+        return super.reloadFromResources(componentPath);
+    }
+
+    @PreAuthorize(CHECK_CAN_MANAGE_BACKEND)
+    @GetMapping(_COMPONENTS)
+    public Object components() {
         return Flow.init()
-                .thenSet(importLog ,a -> services.zipComponentImport.loadResourcesFromZip(file, delete))
+                .thenSet(componentsSyncStatus, a -> syncWithFilesystem ? services.componentImport.detectModifications() : null)
                 .execute()
                 .mav("components");
+
     }
+
 }

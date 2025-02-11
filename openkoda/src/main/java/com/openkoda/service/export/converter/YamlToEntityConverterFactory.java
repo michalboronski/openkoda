@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2016-2023, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
+Copyright (c) 2016-2024, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation
@@ -24,6 +24,7 @@ package com.openkoda.service.export.converter;
 import com.openkoda.controller.ComponentProvider;
 import com.openkoda.model.OpenkodaModule;
 import com.openkoda.model.Organization;
+import com.openkoda.service.export.ClasspathComponentImportService;
 import com.openkoda.service.export.dto.ComponentDto;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -31,6 +32,8 @@ import org.springframework.stereotype.Component;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import static com.openkoda.service.export.ClasspathComponentImportService.SyncStatus.REMOVED;
 
 @Component
 public class YamlToEntityConverterFactory extends ComponentProvider {
@@ -84,5 +87,22 @@ public class YamlToEntityConverterFactory extends ComponentProvider {
         }
         debug("[processYamlDto] Converting dto: " + dto.getClass().getName());
         return converter.convertAndSave(dto, filePath, resources);
+    }
+
+    public <D> ClasspathComponentImportService.SyncStatus modified(D dto, String filePath) {
+        debug("[modified] {}", filePath);
+
+        if (dto == null) {
+            return REMOVED;
+        }
+
+        YamlToEntityConverter<?, D> converter = (YamlToEntityConverter<?, D>) parentConverters.get(dto.getClass());
+
+        if (converter == null) {
+            throw new IllegalArgumentException("No parent converter found for DTO class: " + dto.getClass().getName());
+        }
+        debug("[modified] Converting dto: " + dto.getClass().getName());
+        return converter.checkSyncStatus(dto);
+
     }
 }

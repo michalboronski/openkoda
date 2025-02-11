@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2016-2023, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
+Copyright (c) 2016-2024, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation
@@ -42,6 +42,7 @@ public enum Privilege implements PrivilegeBase, PrivilegeNames {
     canUseReportingAI(ORGANIZATION, 6, "Use Reporting AI", _useReportingAI),
     canCreateReports(ORGANIZATION, 7, "Create Reports", _createReports),
     canReadReports(ORGANIZATION, 8, "Read Reports", _readReports),
+    canUseDocumentGenerator(ORGANIZATION, 119, "Use Document Generator", _useDocumentGenerator),
 
 
     //   USER DATA
@@ -78,8 +79,11 @@ public enum Privilege implements PrivilegeBase, PrivilegeNames {
     //ROLES, SERVER JS, EVENT LISTENERS, SCHEDULERS, THREADS
     canReadBackend(BACKEND, 24, "Read", _canReadBackend),
     canManageBackend(BACKEND, 25, "Manage", _canManageBackend),
-    
-    canImportData(ORGANIZATION, 26, "Import Data", _canImportData)
+
+    canImportData(ORGANIZATION, 26, "Import Data", _canImportData),
+
+    //   RESOURCE
+    readUserResource(USER_RESOURCE, 27,"Read", _readUserResource),
     ;
 
     private Long id;

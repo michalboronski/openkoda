@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2016-2023, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
+Copyright (c) 2016-2024, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation
@@ -22,6 +22,8 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 package com.openkoda.service.notification;
 
 import com.openkoda.controller.ComponentProvider;
+import com.openkoda.core.security.OrganizationUser;
+import com.openkoda.core.security.UserProvider;
 import com.openkoda.core.service.event.ApplicationEvent;
 import com.openkoda.dto.NotificationDto;
 import com.openkoda.model.User;
@@ -40,6 +42,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static com.openkoda.repository.specifications.NotificationSepcifications.allUnreadForUser;
+import static java.util.Collections.emptySet;
 
 @Service
 public class NotificationService extends ComponentProvider {
@@ -53,18 +56,18 @@ public class NotificationService extends ComponentProvider {
      * <p>getUsersUnreadNotificationsNumber</p>
      * returns number of all unread Notifications for a user
      */
-    public int getUsersUnreadNotificationsNumber(Long userId, Set<Long> organizationIds) {
+    public int getUsersUnreadNotificationsNumber(Long userId, Set<Long> roleIds, Set<Long> organizationIds) {
         debug("[getUsersUnreadNotificationsNumber]");
-        return Math.toIntExact(secureNotificationRepository.count(allUnreadForUser(userId, organizationIds)));
+        return Math.toIntExact(secureNotificationRepository.count(allUnreadForUser(userId, roleIds, organizationIds)));
     }
 
     /**
      * <p>getUsersUnreadNotification</p>
      */
-    public List<Notification> getUsersUnreadNotifications(Long userId, Set<Long> organizationIds, Pageable notificationPageable) {
+    public List<Notification> getUsersUnreadNotifications(Long userId, Set<Long> roleIds, Set<Long> organizationIds, Pageable notificationPageable) {
         debug("[getUsersUnreadNotifications]");
 
-        Page<NotificationKeeper> keepers = notificationRepository.findAll(userId, organizationIds, notificationPageable);
+        Page<NotificationKeeper> keepers = notificationRepository.findAll(userId, roleIds, organizationIds, notificationPageable);
 
         List<Notification> unreadNotificationsList = new ArrayList<>();
         for (NotificationKeeper k : keepers.getContent()) {
@@ -90,14 +93,14 @@ public class NotificationService extends ComponentProvider {
         return idString;
     }
 
-    public boolean createGlobalNotification(Notification.NotificationType type, String message, String requiredPrivilege, String attachmentURL) {
+    public Notification createGlobalNotification(Notification.NotificationType type, String message, String requiredPrivilege, String attachmentURL) {
         debug("[createGlobalNotification]");
         Notification notification = new Notification(message, type, requiredPrivilege);
         notification.setAttachmentURL(attachmentURL);
         notificationRepository.save(notification);
 
         services.applicationEvent.emitEvent(ApplicationEvent.NOTIFICATION_CREATED, new NotificationDto(notification));
-        return true;
+        return notification;
     }
 
     public Notification createOrganizationNotification(Notification.NotificationType type, String message, Long organizationId, String requiredPrivilege, String attachmentURL) {
@@ -136,6 +139,26 @@ public class NotificationService extends ComponentProvider {
         return n;
     }
 
+    public Notification createRoleGlobalNotification(Notification.NotificationType type, String message, String requiredPrivilege, String attachmentURL, Long roleId) {
+        debug("[createRoleGlobalNotification]");
+        Notification notification = new Notification(message, type, null, requiredPrivilege, roleId);
+        notification.setAttachmentURL(attachmentURL);
+        Notification n = notificationRepository.save(notification);
+
+        services.applicationEvent.emitEvent(ApplicationEvent.NOTIFICATION_CREATED, new NotificationDto(notification));
+        return n;
+    }
+
+    public Notification createRoleOrganizationNotification(Notification.NotificationType type, String message, Long organizationId, String requiredPrivilege, String attachmentURL, Long roleId){
+        debug("[createRoleOrganizationNotification]");
+        Notification notification = new Notification(message, type, organizationId, requiredPrivilege, roleId);
+        notification.setAttachmentURL(attachmentURL);
+        Notification n = notificationRepository.save(notification);
+
+        services.applicationEvent.emitEvent(ApplicationEvent.NOTIFICATION_CREATED, new NotificationDto(notification));
+        return n;
+    }
+
     public boolean markAsRead(String unreadNotifications, Long userId) {
         debug("[markAsRead] userId: {}", userId);
         if (StringUtils.isNotBlank(unreadNotifications)) {
@@ -150,13 +173,17 @@ public class NotificationService extends ComponentProvider {
         debug("[markAllAsRead] userId: {} orgId: {}", userId, organizationId);
         User user = repositories.unsecure.user.findOne(userId);
         if (user != null) {
-            Set<Long> orgsId = new HashSet<>();
+            Set<Long> organizationIds;
+            Set<Long> roleIds = new HashSet<>();
+            Optional<OrganizationUser> organizationUser = UserProvider.getFromContext();
             if(organizationId != null && Arrays.asList(user.getOrganizationIds()).contains(organizationId)) {
-                orgsId = Collections.singleton(organizationId);
-            } else if(user.getOrganizationIds() != null) {
-                orgsId = Set.of(user.getOrganizationIds());
+                organizationIds = Collections.singleton(organizationId);
+                roleIds.addAll(organizationUser.get().getOrganizationRoleIds().get(organizationId));
+            } else {
+                organizationIds = Set.of(OrganizationUser.nonExistingOrganizationId);
+                roleIds.addAll(organizationUser.get().getGlobalRolesIds());
             }
-            List<Notification> allUnreadForUser = repositories.secure.notification.search(allUnreadForUser(userId, orgsId));
+            List<Notification> allUnreadForUser = repositories.secure.notification.search(allUnreadForUser(userId, roleIds.isEmpty() ? emptySet() : roleIds, organizationIds));
             repositories.unsecure.readNotification.saveAll(allUnreadForUser.stream().map(notification -> new ReadNotification(userId, notification.getId())).collect(Collectors.toSet()));
             return true;
         }

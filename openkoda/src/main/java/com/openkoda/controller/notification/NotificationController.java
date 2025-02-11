@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2016-2023, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
+Copyright (c) 2016-2024, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation
@@ -26,58 +26,47 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
 
-import static com.openkoda.controller.common.URLConstants._HTML;
+import static com.openkoda.controller.common.URLConstants.*;
 
 @Controller
-@RequestMapping(_HTML)
+@RequestMapping({_HTML_ORGANIZATION_ORGANIZATIONID + _NOTIFICATION, _HTML + _NOTIFICATION})
 public class NotificationController extends AbstractNotificationController implements HasSecurityRules {
 
     /**
      * <p>openAllOrganizationNotifications</p>
      * Gets all read and unread Notifications from repo as a NotificationKeeper object
      */
-    @PreAuthorize(CHECK_IS_THIS_USERID)
-    @RequestMapping(_NOTIFICATION + _USERID + _ALL)
-    public Object openAllNotifications(@PathVariable(USERID) Long userId, @Qualifier("notification") Pageable notificationPageable) {
-        debug("[openAllNotifications] UserId: {} ", userId);
-        return getAllNotifications(userId, notificationPageable).mav("notification-all");
-    }
-
- /**
-     * <p>openAllOrganizationNotifications</p>
-     * Gets all read and unread Notifications from repo as a NotificationKeeper object
-     */
-    @PreAuthorize(CHECK_IS_THIS_USERID)
-    @RequestMapping(_ORGANIZATION_ORGANIZATIONID + _NOTIFICATION + _USERID + _ALL)
-    public Object openAllNotifications(@PathVariable(ORGANIZATIONID) Long organizationId, @PathVariable(USERID) Long userId, @Qualifier("notification") Pageable notificationPageable) {
-        debug("[openAllNotifications] UserId: {} OrgId: {}", userId, organizationId);
-        return getAllNotifications(userId, organizationId, notificationPageable).mav("notification-all");
+    @GetMapping(_ALL)
+    public Object getAll(
+         @PathVariable(value = ORGANIZATIONID, required = false) Long organizationId,
+         @Qualifier(NOTIFICATION) Pageable notificationPageable,
+         @RequestParam(required = false, defaultValue = "", name = "notification_search") String search) {
+        debug("[getAll]");
+        return getAllNotifications(organizationId, notificationPageable)
+                .mav("notification-all");
     }
 
     /**
      * <p>markNotificationAsRead</p>
      * Marks all visible Notifications in dropdown as read
      */
-    @PreAuthorize(CHECK_IS_THIS_USERID)
-    @PostMapping(value = {_ORGANIZATION_ORGANIZATIONID + _NOTIFICATION + _USERID + _MARK_READ, _NOTIFICATION + _USERID + _MARK_READ})
-    public Object markNotificationAsRead(@PathVariable(name = ORGANIZATIONID, required = false) Long organizationId, @PathVariable(USERID) Long userId, @RequestParam("unreadNotifications") String unreadNotifications) {
-        debug("[markNotificationAsRead] UserId: {} OrgId: {}", userId, organizationId);
-        markAsRead(unreadNotifications, userId);
+    @PostMapping(_MARK_READ)
+    public Object markNotificationAsRead(
+            @PathVariable(value = ORGANIZATIONID, required = false) Long organizationId,
+            @RequestParam("unreadNotifications") String unreadNotifications) {
+        debug("[markNotificationAsRead]");
+        markAsRead(unreadNotifications);
         return ResponseEntity.status(HttpStatus.OK).body("Successfully marked notifications as read!");
     }
 
-    @PreAuthorize(CHECK_IS_THIS_USERID)
-    @PostMapping(value = {_ORGANIZATION_ORGANIZATIONID + _NOTIFICATION + _USERID + _ALL + _MARK_READ, _NOTIFICATION + _USERID + _ALL + _MARK_READ})
-    public Object markReadAllNotifications(@PathVariable(name = ORGANIZATIONID, required = false) Long organizationId, @PathVariable(USERID) Long userId) {
-        debug("[markReadAllNotifications] UserId: {} OrgId: {}", userId, organizationId);
-        markAllAsRead(userId, organizationId);
+    @PostMapping(_ALL + _MARK_READ)
+    public Object markReadAllNotifications(
+            @PathVariable(value = ORGANIZATIONID, required = false) Long organizationId) {
+        debug("[markReadAllNotifications]");
+        markAllAsRead(organizationId);
         return ResponseEntity.status(HttpStatus.OK).body("Successfully marked all user's notifications as read!");
     }
 }

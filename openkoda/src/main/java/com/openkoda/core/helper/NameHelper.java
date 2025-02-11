@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2016-2023, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
+Copyright (c) 2016-2024, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation
@@ -31,7 +31,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static com.google.common.base.CaseFormat.*;
+import static com.google.common.base.CaseFormat.LOWER_CAMEL;
+import static com.google.common.base.CaseFormat.LOWER_UNDERSCORE;
 
 /**
  * Manipulate class or method names
@@ -88,11 +89,11 @@ public class NameHelper {
     }
 
     public static String toEntityClassName(String formName){
-        return LOWER_CAMEL.to(UPPER_CAMEL, formName);
+        return StringUtils.capitalize(toEntityKey(formName));
     }
 
     public static String toEntityKey(String formName){
-        return formName;
+        return StringUtils.isNotEmpty(formName) ? StringUtils.lowerCase(formName.replaceAll("\\s", "")) : null;
     }
 
     public static String toFieldName(String columnName){

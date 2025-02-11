@@ -1,3 +1,24 @@
+/*
+MIT License
+
+Copyright (c) 2016-2024, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
+documentation files (the "Software"), to deal in the Software without restriction, including without limitation
+the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software,
+and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice
+shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR
+A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS
+OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR
+IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+*/
+
 package com.openkoda.controller.report;
 
 import com.openkoda.controller.common.PageAttributes;
@@ -5,6 +26,7 @@ import com.openkoda.core.controller.generic.AbstractController;
 import com.openkoda.core.flow.Flow;
 import com.openkoda.core.form.AbstractOrganizationRelatedEntityForm;
 import com.openkoda.core.form.CRUDControllerConfiguration;
+import com.openkoda.core.helper.ResourcesHelper;
 import com.openkoda.core.security.HasSecurityRules;
 import com.openkoda.model.common.SearchableOrganizationRelatedEntity;
 import com.openkoda.model.file.File;
@@ -53,8 +75,21 @@ public class QueryReportController extends AbstractController implements HasSecu
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
         return Flow.init()
-                .then(a -> (SearchableOrganizationRelatedEntity)conf.getSecureRepository().findOne(existingReportId))
-                .then(a -> services.validation.validateAndPopulateToEntity(form, br, a.result != null ? a.result : conf.createNewEntity(organizationId)))
+                .thenSet(organizationRelatedEntity, a -> (SearchableOrganizationRelatedEntity)conf.getSecureRepository().findOne(existingReportId))
+                .thenSet(isUpdate, a -> a.model.get(organizationRelatedEntity) != null)
+                .then(a -> services.validation.validateAndPopulateToEntity(form, br, a.model.get(isUpdate) ? a.model.get(organizationRelatedEntity) : conf.createNewEntity(organizationId)))
+                .thenSet(organizationRelatedEntity, a -> (SearchableOrganizationRelatedEntity)conf.getSecureRepository().saveOne(a.result))
+                .then(a ->
+                        /*add new widget or update*/
+                        (!a.model.get(isUpdate) || ((QueryReport) a.result).getWidget() == null
+                                ? services.frontendResource.createWidgetFromResources(organizationId, "report-" + a.result.getId(), "Report: " + ((QueryReport) a.result).getName(), "/templates/frontend-resource/global/report-widget.html",
+                                    String.format(ResourcesHelper.getResourceAsStringOrEmpty("/code/ui-component/global/report-widget-GET.js"), a.result.getId()))
+                                : services.frontendResource.updateWidget(((QueryReport) a.result).getWidget(), "Report: " + ((QueryReport) a.result).getName()))
+                        )
+                .then(a -> {
+                    ((QueryReport)a.model.get(organizationRelatedEntity)).setWidget(a.result);
+                    return a.model.get(organizationRelatedEntity);
+                })
                 .thenSet(organizationRelatedEntity, a -> (SearchableOrganizationRelatedEntity)conf.getSecureRepository().saveOne(a.result))
                 .thenSet(reportId, a -> a.model.get(organizationRelatedEntity).getId())
                 .thenSet(conf.getFormAttribute(), a -> conf.createNewForm(organizationId, a.model.get(organizationRelatedEntity)))
@@ -89,8 +124,14 @@ public class QueryReportController extends AbstractController implements HasSecu
                 .thenSet(genericReportViewLinkedHashMap, a -> finalQueryResult)
                 .thenSet(error, a -> finalErrorLog)
                 .then(a -> (QueryReport) conf.getSecureRepository().findOne(reportId))
-                .then(a -> a.result != null ? a.result : new QueryReport(query))
-                .thenSet(conf.getFormAttribute(), a -> canSaveReport ? conf.createNewForm(organizationId, a.result) : null)
+                .then(a -> {
+                    if(a.result != null) {
+                        a.result.setQuery(query);
+                        return a.result;
+                    }
+                    return new QueryReport(query);
+                })
+                .thenSet(conf.getFormAttribute(), a -> canSaveReport ? conf.createNewForm(organizationId, (QueryReport) a.result) : null)
                 .execute()
                 .mav(resultView);
 

@@ -6,7 +6,7 @@
 
 
     <div layout:fragment="content" th:attr="data-menu-item='logs'">
-        <script src="/vendor/scripts/js.cookie.min.js"> </script>
+        <script th:src="@{/vendor/scripts/js.cookie.min.js}"> </script>
         <th:block th:replace="snippets::codemirror-import"></th:block>
         <nav th:replace="~{navigation-fragments::log-monitoring-nav-tabs('system-health')}"></nav>
 

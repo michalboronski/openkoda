@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2016-2023, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
+Copyright (c) 2016-2024, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation
@@ -28,6 +28,8 @@ import com.openkoda.model.Privilege;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.SavedRequestAwareAuthenticationSuccessHandler;
@@ -70,6 +72,8 @@ public class CustomAuthenticationSuccessHandler extends SavedRequestAwareAuthent
      */
     private RequestCache requestCache = new HttpSessionRequestCache();
 
+    @Value("${server.servlet.context-path}") private String springContext = "";
+    
     public CustomAuthenticationSuccessHandler(String pageAfterAuthForMultipleOrganizations, String pageAfterAuthForOneOrganization, String pageAfterAuthForGlobalAdmin, SecurityContextRepository securityContextRepository) {
         this.pageAfterAuthForMultipleOrganizations = pageAfterAuthForMultipleOrganizations;
         this.pageAfterAuthForOneOrganization = pageAfterAuthForOneOrganization;
@@ -98,15 +102,15 @@ public class CustomAuthenticationSuccessHandler extends SavedRequestAwareAuthent
             debug("[onAuthenticationSuccess] user orgsIds {}, primary {}", organizationIds == null ? "[]" : organizationIds.toString(), onlyOrgId);
 
             if(authenticatedUser.hasGlobalPrivilege(Privilege.canAccessGlobalSettings)) {
-                debug("[onAuthenticationSuccess] redirecting to admin dashboard {}", pageAfterAuthForGlobalAdmin);
-                httpServletResponse.sendRedirect(pageAfterAuthForGlobalAdmin);
+                debug("[onAuthenticationSuccess] redirecting to admin dashboard {}", httpServletRequest.getContextPath() + pageAfterAuthForGlobalAdmin);
+                httpServletResponse.sendRedirect(httpServletRequest.getContextPath() +pageAfterAuthForGlobalAdmin);
             } else if (onlyOrgId != -1L) {
                 String redirectUrl = String.format(pageAfterAuthForOneOrganization, onlyOrgId);
-                debug("[onAuthenticationSuccess] redirecting to single {}", redirectUrl);
-                httpServletResponse.sendRedirect(redirectUrl);
+                debug("[onAuthenticationSuccess] redirecting to single {}", httpServletRequest.getContextPath() + redirectUrl);
+                httpServletResponse.sendRedirect(httpServletRequest.getContextPath() + redirectUrl);
             } else {
-                debug("[onAuthenticationSuccess] redirecting to multiple {}", pageAfterAuthForMultipleOrganizations);
-                httpServletResponse.sendRedirect(pageAfterAuthForMultipleOrganizations);
+                debug("[onAuthenticationSuccess] redirecting to multiple {}", httpServletRequest.getContextPath() + pageAfterAuthForMultipleOrganizations);
+                httpServletResponse.sendRedirect(httpServletRequest.getContextPath() + pageAfterAuthForMultipleOrganizations);
             }
         }
     }

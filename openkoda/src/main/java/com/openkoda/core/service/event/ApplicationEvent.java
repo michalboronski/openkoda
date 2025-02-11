@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2016-2023, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
+Copyright (c) 2016-2024, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation
@@ -26,7 +26,7 @@ import com.openkoda.dto.OrganizationDto;
 import com.openkoda.dto.RegisteredUserDto;
 import com.openkoda.dto.payment.PlanDto;
 import com.openkoda.dto.system.ScheduledSchedulerDto;
-import com.openkoda.dto.user.BasicUser;
+import com.openkoda.dto.user.BasicUserDto;
 import com.openkoda.dto.user.UserRoleDto;
 import com.openkoda.model.component.Scheduler;
 import com.openkoda.model.component.event.EventListenerEntry;
@@ -45,12 +45,12 @@ import java.time.LocalDateTime;
  */
 public class ApplicationEvent<T> extends AbstractApplicationEvent<T> {
 
-    public static final ApplicationEvent<BasicUser> USER_CREATED = new ApplicationEvent(BasicUser.class, "USER_CREATED");
+    public static final ApplicationEvent<BasicUserDto> USER_CREATED = new ApplicationEvent(BasicUserDto.class, "USER_CREATED");
     public static final ApplicationEvent<RegisteredUserDto> USER_REGISTERED = new ApplicationEvent(RegisteredUserDto.class, "USER_REGISTERED");
-    public static final ApplicationEvent<BasicUser> USER_MODIFIED = new ApplicationEvent(BasicUser.class, "USER_MODIFIED");
-    public static final ApplicationEvent<BasicUser> USER_DELETED = new ApplicationEvent(BasicUser.class, "USER_DELETED");
-    public static final ApplicationEvent<BasicUser> USER_VERIFIED = new ApplicationEvent(BasicUser.class, "USER_VERIFIED");
-    public static final ApplicationEvent<BasicUser> USER_LOGGED_IN = new ApplicationEvent(BasicUser.class, "USER_LOGGED_IN");
+    public static final ApplicationEvent<BasicUserDto> USER_MODIFIED = new ApplicationEvent(BasicUserDto.class, "USER_MODIFIED");
+    public static final ApplicationEvent<BasicUserDto> USER_DELETED = new ApplicationEvent(BasicUserDto.class, "USER_DELETED");
+    public static final ApplicationEvent<BasicUserDto> USER_VERIFIED = new ApplicationEvent(BasicUserDto.class, "USER_VERIFIED");
+    public static final ApplicationEvent<BasicUserDto> USER_LOGGED_IN = new ApplicationEvent(BasicUserDto.class, "USER_LOGGED_IN");
     public static final ApplicationEvent<OrganizationDto> ORGANIZATION_CREATED = new ApplicationEvent(OrganizationDto.class, "ORGANIZATION_CREATED");
     public static final ApplicationEvent<OrganizationDto> ORGANIZATION_MODIFIED = new ApplicationEvent(OrganizationDto.class, "ORGANIZATION_MODIFIED");
     public static final ApplicationEvent<OrganizationDto> ORGANIZATION_DELETED = new ApplicationEvent(OrganizationDto.class, "ORGANIZATION_DELETED");

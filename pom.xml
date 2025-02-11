@@ -1,7 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <organization>
@@ -12,19 +10,48 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.0.5</version>
+        <version>3.0.13</version>
     </parent>
+
+    <properties>
+        <revision>1.7.2-SNAPSHOT</revision>
+    </properties>
 
     <groupId>com.openkoda</groupId>
     <artifactId>openkoda-aggregator</artifactId>
-    <version>1.7.1</version>
+    <version>1.7.2-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <modules>
         <module>openkoda-app</module>
         <module>openkoda</module>
+        <module>openkoda-development-module</module>
+        <module>openkoda-extensions</module>
+        <module>examples/asset-management</module>
+        <module>examples/boards</module>
+        <module>examples/insurance-policy-management</module>
+        <module>examples/timelog</module>
+        <module>openkoda-external-services</module>
     </modules>
 
+    <distributionManagement>
+        <repository>
+            <id>central</id>
+            <name>libs-release-local</name>
+            <url>https://artifactory.dev.stratoflow.com/artifactory/dev-libs-release-local</url>
+        </repository>
+        <snapshotRepository>
+            <id>central</id>
+            <name>libs-snapshot-local</name>
+            <url>https://artifactory.dev.stratoflow.com/artifactory/dev-libs-snapshot-local</url>
+        </snapshotRepository>
+    </distributionManagement>
+    
+    <scm>
+        <developerConnection>scm:git:https://git.dev.stratoflow.com/all-projects/openkoda.git</developerConnection>
+      <tag>HEAD</tag>
+  </scm>
+    
     <licenses>
         <license>
             <name>MIT License</name>
@@ -33,4 +60,5 @@
             <comments>A short and simple permissive license with conditions only requiring preservation of copyright and license notices. Licensed works, modifications, and larger works may be distributed under different terms and without source code.</comments>
         </license>
     </licenses>
+    
 </project>

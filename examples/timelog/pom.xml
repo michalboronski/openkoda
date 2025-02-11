@@ -7,13 +7,13 @@
     <parent>
         <groupId>com.openkoda</groupId>
         <artifactId>openkoda-app</artifactId>
+        <version>1.7.2-SNAPSHOT</version>
         <relativePath>../../openkoda-app</relativePath>
-        <version>1.4.3</version>
     </parent>
 
     <groupId>com.openkoda.example</groupId>
     <artifactId>timelog</artifactId>
-    <version>1.0.1</version>
+    <version>1.7.2-SNAPSHOT</version>
 
     <properties>
         <maven.compiler.source>17</maven.compiler.source>
@@ -23,9 +23,9 @@
 
     <dependencies>
         <dependency>
-            <groupId>com.openkoda</groupId>
-            <artifactId>openkoda</artifactId>
-            <version>1.4.3</version>
+            <groupId>com.openkoda.openkoda-extensions</groupId>
+            <artifactId>openkoda-development-module</artifactId>
+            <version>1.7.2-SNAPSHOT</version>
         </dependency>
     </dependencies>
 

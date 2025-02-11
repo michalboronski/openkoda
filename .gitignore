@@ -1,3 +1,12 @@
 .idea/
 target/
+build/
 *.log
+*.classpath
+*.project
+*.settings
+*.factorypath
+*.dbeaver
+bin
+pom.xml.versionsBackup
+/openkoda/cypress/node_modules/

@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2016-2023, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
+Copyright (c) 2016-2024, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation
@@ -32,9 +32,10 @@ import java.util.Objects;
  */
 public class AbstractApplicationEvent<T> {
 
-    private final Class<T> eventClass;
-    private final String eventName;
-    private final static Map<String, AbstractApplicationEvent> eventList = new HashMap<>();
+    protected Class<T> eventClass;
+    protected String eventName;
+    @Deprecated
+    private static final Map<String, AbstractApplicationEvent> eventList = new HashMap<>();
 
 
     /**
@@ -45,7 +46,9 @@ public class AbstractApplicationEvent<T> {
     protected AbstractApplicationEvent(Class<T> eventClass, String eventName) {
         this.eventClass = eventClass;
         this.eventName = eventName;
-        eventList.put(eventName, this);
+        if(eventName != null) {
+            eventList.put(eventName, this);
+        }
     }
 
     /**
@@ -82,7 +85,12 @@ public class AbstractApplicationEvent<T> {
      * @return the AbstractApplicationEvent object that corresponds to the eventName parameter.
      * If there is no such event in the eventList collection, the method will return null.
      */
+    @Deprecated
     public static AbstractApplicationEvent getEvent(String eventName){
         return eventList.get(eventName);
+    }
+    
+    protected String getEventName() {
+        return this.eventName;
     }
 }

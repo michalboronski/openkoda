@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2016-2023, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
+Copyright (c) 2016-2024, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software
  and associated documentation files (the "Software"), to deal in the Software without restriction, 
@@ -97,6 +97,7 @@ public interface HasSecurityRules extends LoggingComponentWithRequestId {
     String CHECK_CAN_MANAGE_ORG_DATA =              HAS_GLOBAL_OR_ORG_PRIVILEGE_STRING_OPEN + _manageOrgData  + HAS_ORG_PRIVILEGE_CLOSE;
     String CHECK_CAN_READ_ORG_DATA =                HAS_GLOBAL_OR_ORG_PRIVILEGE_STRING_OPEN + _readOrgData  + HAS_ORG_PRIVILEGE_CLOSE;
     String CHECK_CAN_USE_AI =                       HAS_GLOBAL_OR_ORG_PRIVILEGE_STRING_OPEN + _useReportingAI + HAS_ORG_PRIVILEGE_CLOSE;
+    String CHECK_CAN_DOCUMENT_GENERATOR =           HAS_GLOBAL_OR_ORG_PRIVILEGE_STRING_OPEN + _useDocumentGenerator + HAS_ORG_PRIVILEGE_CLOSE;
     String CHECK_CAN_CREATE_REPORTS =               HAS_GLOBAL_OR_ORG_PRIVILEGE_STRING_OPEN + _createReports  + HAS_ORG_PRIVILEGE_CLOSE;
     String CHECK_CAN_READ_REPORTS =                 HAS_GLOBAL_OR_ORG_PRIVILEGE_STRING_OPEN + _readReports  + HAS_ORG_PRIVILEGE_CLOSE;
     String CHECK_CAN_READ_USER_SETTINGS =           BB_OPEN +  HAS_GLOBAL_OR_ORG_PRIVILEGE_STRING_OPEN + _readUserData + HAS_ORG_PRIVILEGE_CLOSE + OR  + CHECK_IS_THIS_USERID + BB_CLOSE;
@@ -229,7 +230,7 @@ public interface HasSecurityRules extends LoggingComponentWithRequestId {
     }
 
     default boolean canReadFieldInOrganization(FrontendMappingFieldDefinition field, LongIdEntity entity, Long organizationId) {
-        return hasFieldPrivileges(field.readPrivilege, field.canReadCheck, entity, organizationId);
+        return hasFieldPrivileges(field.readPrivilege, field.canReadCheck, entity, organizationId, field.isStrictReadAccess());
     }
 
     default boolean canReadField(FrontendMappingFieldDefinition field, LongIdEntity entity) {
@@ -249,7 +250,7 @@ public interface HasSecurityRules extends LoggingComponentWithRequestId {
     }
     
     default boolean canWriteFieldInOrganization(FrontendMappingFieldDefinition field, LongIdEntity entity, Long organizationId) {
-        return hasFieldPrivileges(field.writePrivilege, field.canWriteCheck, entity, organizationId);
+        return hasFieldPrivileges(field.writePrivilege, field.canWriteCheck, entity, organizationId, field.isStrictWriteAccess());
     }
 
     default boolean canWriteField(FrontendMappingFieldDefinition field, LongIdEntity entity) {

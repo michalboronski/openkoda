@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2016-2023, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
+Copyright (c) 2016-2024, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation
@@ -21,20 +21,30 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 package com.openkoda.controller.file;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.openkoda.core.controller.generic.AbstractController;
 import com.openkoda.core.flow.Flow;
 import com.openkoda.core.flow.PageAttr;
 import com.openkoda.core.flow.PageModelMap;
 import com.openkoda.core.security.HasSecurityRules;
+import com.openkoda.dto.file.FileDto;
 import com.openkoda.form.FileForm;
 import com.openkoda.model.file.File;
 import com.openkoda.repository.file.FileRepository;
 import com.openkoda.repository.file.SecureFileRepository;
 import jakarta.inject.Inject;
+import org.apache.commons.collections.keyvalue.DefaultMapEntry;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.validation.BindingResult;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.Serializable;
+import java.sql.SQLException;
 
 
 public class AbstractFileController extends AbstractController implements HasSecurityRules {
@@ -112,6 +122,43 @@ public class AbstractFileController extends AbstractController implements HasSec
                 .then(a -> services.file.scaleImage(a.result, width))
                 .then(a -> repositories.unsecure.file.saveAndFlush(a.result))
                 .execute();
+    }
+
+    @NotNull
+    protected UploadResponse doUpload(Long organizationId, MultipartFile file, String uuid, String fileName, long totalFileSize) throws IOException, SQLException {
+        debug("[doUpload] upload uuid {}, fileName {}", uuid, fileName);
+        File f = unsecureFileRepository.findByUploadUuid(uuid);
+        if (f == null) {
+            String originalFilename = file.getOriginalFilename();
+            InputStream inputStream = file.getInputStream();
+            f = services.file.saveAndPrepareFileEntity(organizationId, uuid, fileName, totalFileSize, originalFilename, inputStream);
+            unsecureFileRepository.saveAndFlush(f);
+        }
+        return new UploadResponse(null, true, f.getId(), File.toFileDto(f));
+    }
+
+    @NotNull
+    protected DefaultMapEntry doChunksDone(String uuid) {
+        debug("[doChunksDone] upload uuid {}", uuid);
+        File f = unsecureFileRepository.findByUploadUuid(uuid);
+        DefaultMapEntry dto = new DefaultMapEntry(f.getId(), new FileDto());
+        return dto;
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public class UploadResponse implements Serializable {
+
+        public String error;
+        public boolean success;
+        public FileDto file;
+        public Long fileId;
+
+        public UploadResponse(String error, boolean success, Long fileId, FileDto file) {
+            this.error = error;
+            this.success = success;
+            this.file = file;
+            this.fileId = fileId;
+        }
     }
 
 }

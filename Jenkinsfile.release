@@ -1,0 +1,3 @@
+@Library(['jenkins-utils@devel', 'openkoda-jenkins-pipeline@main']) _
+
+openkodaRelease()

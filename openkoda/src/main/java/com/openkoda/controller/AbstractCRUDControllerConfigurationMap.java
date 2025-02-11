@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2016-2023, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
+Copyright (c) 2016-2024, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation
@@ -22,6 +22,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 package com.openkoda.controller;
 
 import com.openkoda.core.form.*;
+import com.openkoda.core.helper.NameHelper;
 import com.openkoda.core.repository.common.ScopedSecureRepository;
 import com.openkoda.model.Privilege;
 import com.openkoda.model.PrivilegeBase;
@@ -64,7 +65,7 @@ public abstract class AbstractCRUDControllerConfigurationMap extends HashMap<Str
         CRUDControllerConfiguration controllerConfiguration = CRUDControllerConfiguration.getBuilder(key,
                 FrontendMappingDefinition.createFrontendMappingDefinition(key, defaultReadPrivilege, defaultWritePrivilege, builder),
                 secureRepository, formClass);
-        this.put(key, controllerConfiguration);
+        this.put(NameHelper.toEntityKey(key), controllerConfiguration);
         return controllerConfiguration;
     }
 
@@ -124,7 +125,7 @@ public abstract class AbstractCRUDControllerConfigurationMap extends HashMap<Str
         CRUDControllerConfiguration controllerConfiguration = CRUDControllerConfiguration.getBuilder(key,
                 FrontendMappingDefinition.createFrontendMappingDefinition(key, defaultReadPrivilege, defaultWritePrivilege, builder),
                 secureRepository, ReflectionBasedEntityForm.class);
-        this.put(key, controllerConfiguration);
+        this.put(NameHelper.toEntityKey(key), controllerConfiguration);
         return controllerConfiguration;
     }
 
@@ -153,7 +154,7 @@ public abstract class AbstractCRUDControllerConfigurationMap extends HashMap<Str
 
         CRUDControllerConfiguration controllerConfiguration = CRUDControllerConfiguration.getBuilder(key,
                 frontendMappingDefinition, secureRepository, formClass, defaultReadPrivilege, defaultWritePrivilege);
-        this.put(key, controllerConfiguration);
+        this.put(NameHelper.toEntityKey(key), controllerConfiguration);
         return controllerConfiguration;
     }
 
@@ -174,7 +175,7 @@ public abstract class AbstractCRUDControllerConfigurationMap extends HashMap<Str
         CRUDControllerConfiguration controllerConfiguration = CRUDControllerConfiguration.getBuilder(key,
                 FrontendMappingDefinition.createFrontendMappingDefinition(key, Privilege.canAccessGlobalSettings, Privilege.canAccessGlobalSettings, builder),
                 secureMapEntityRepository, MapEntityForm.class);
-        this.put(key, controllerConfiguration);
+        this.put(NameHelper.toEntityKey(key), controllerConfiguration);
         return controllerConfiguration;
     }
 
@@ -188,7 +189,7 @@ public abstract class AbstractCRUDControllerConfigurationMap extends HashMap<Str
             String key,
             CRUDControllerConfiguration controllerConfiguration
             ) {
-        this.put(key, controllerConfiguration);
+        this.put(NameHelper.toEntityKey(key), controllerConfiguration);
         return controllerConfiguration;
     }
 

@@ -3,10 +3,10 @@
 <body>
 
 <span th:fragment="GDPR">
-    <script src="/vendor/cookieconsent/cookieconsent.min.js"> </script>
-    <link href="/vendor/cookieconsent/cookieconsent.min.css" rel="stylesheet" type="text/css">
+    <script th:src="@{/vendor/cookieconsent/cookieconsent.min.js}"> </script>
+    <link th:href="@{/vendor/cookieconsent/cookieconsent.min.css}" rel="stylesheet" type="text/css">
     <script> var necessaryCookies = true </script>
-    <script src="/vendor/cookieconsent/cookies.js"></script>
+    <script th:src="@{/vendor/cookieconsent/cookies.js}"></script>
 </span>
 
 </body>

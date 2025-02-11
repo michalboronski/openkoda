@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2016-2023, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
+Copyright (c) 2016-2024, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation
@@ -134,7 +134,7 @@ public class AbstractUserController extends AbstractController {
                 .then( a -> services.validation.validateAndPopulateToEntity(userFormData, br,a.result))
                 .then( a -> repositories.unsecure.user.save(a.result))
                 .then( a -> userFormData.dto.globalRoleName != null ? services.user.changeUserGlobalRole(a.result, userFormData.dto.getGlobalRoleName()) : null)
-                .then( a -> services.applicationEvent.emitEvent(ApplicationEvent.USER_MODIFIED, a.model.get(userEntity).getBasicUser()))
+                .then( a -> services.applicationEvent.emitEvent(ApplicationEvent.USER_MODIFIED, a.model.get(userEntity).getBasicUserDto()))
                 .thenSet(editUserForm, a -> {
                     EditUserForm form = new EditUserForm(a.model.get(userEntity));
                     Role role = a.model.get(roleEntity);

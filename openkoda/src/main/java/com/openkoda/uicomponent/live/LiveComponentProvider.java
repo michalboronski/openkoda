@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2016-2023, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
+Copyright (c) 2016-2024, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation
@@ -38,6 +38,7 @@ public class LiveComponentProvider {
     public final OpenAIServices openAI;
     public final SystemServices system;
     public final MediaServices media;
+    public final EventServices event;
 
     public LiveComponentProvider(
             @Autowired DataServices data,
@@ -46,7 +47,8 @@ public class LiveComponentProvider {
             @Autowired UtilServices util,
             @Autowired SystemServices system,
             @Autowired(required = false) OpenAIServices openAI,
-            @Autowired MediaServices media) {
+            @Autowired MediaServices media,
+            @Autowired EventServices event) {
         this.data = data;
         this.integrations = integrations;
         this.messages = messages;
@@ -54,6 +56,7 @@ public class LiveComponentProvider {
         this.system = system;
         this.openAI = openAI;
         this.media = media;
+        this.event = event;
     }
 
 }

@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2016-2023, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
+Copyright (c) 2016-2024, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation
@@ -30,7 +30,6 @@ public class RegisteredUserDto implements CanonicalObject {
     public String login;
     public String firstName;
     public String lastName;
-    //TODO: change to 'websiteUrl' - it is more generic for projects where users register with a website url.
     public String websiteUrl;
     public String nickname;
     public long organizationId;

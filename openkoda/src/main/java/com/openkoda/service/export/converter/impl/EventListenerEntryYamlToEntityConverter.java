@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2016-2023, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
+Copyright (c) 2016-2024, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation
@@ -23,12 +23,18 @@ package com.openkoda.service.export.converter.impl;
 
 import com.openkoda.controller.ComponentProvider;
 import com.openkoda.model.component.event.EventListenerEntry;
+import com.openkoda.service.export.ClasspathComponentImportService;
 import com.openkoda.service.export.converter.YamlToEntityConverter;
 import com.openkoda.service.export.converter.YamlToEntityParentConverter;
 import com.openkoda.service.export.dto.EventListenerEntryConversionDto;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.data.domain.Example;
 import org.springframework.stereotype.Component;
 
 import java.util.Map;
+import java.util.Optional;
+
+import static com.openkoda.service.export.ClasspathComponentImportService.SyncStatus.*;
 
 @Component
 @YamlToEntityParentConverter(dtoClass = EventListenerEntryConversionDto.class)
@@ -62,4 +68,28 @@ public class EventListenerEntryYamlToEntityConverter extends ComponentProvider i
         services.eventListener.registerListenerClusterAware(eventListenerEntry);
         return eventListenerEntry;
     }
+
+    @Override
+    public ClasspathComponentImportService.SyncStatus checkSyncStatus(EventListenerEntryConversionDto dto) {
+        Optional<EventListenerEntry> a = repositories.unsecure.eventListener.findOne(
+                Example.of(new EventListenerEntry(dto.getOrganizationId(), dto.getModule(),
+                            dto.getEventClassName(),
+                            dto.getEventName(),
+                            dto.getEventObjectType(),
+                            dto.getConsumerClassName(),
+                            dto.getConsumerMethodName())));
+        if (a.isEmpty()) {
+            return NEW;
+        }
+        EventListenerEntry el = a.get();
+
+        boolean same = true;
+        same &= StringUtils.equals(String.valueOf(el.getStaticData1()), String.valueOf(dto.getStaticData1()));
+        same &= StringUtils.equals(String.valueOf(el.getStaticData2()), String.valueOf(dto.getStaticData2()));
+        same &= StringUtils.equals(String.valueOf(el.getStaticData3()), String.valueOf(dto.getStaticData3()));
+        same &= StringUtils.equals(String.valueOf(el.getStaticData4()), String.valueOf(dto.getStaticData4()));
+
+        return same ? UNCHANGED : MODIFIED;
+    }
+
 }

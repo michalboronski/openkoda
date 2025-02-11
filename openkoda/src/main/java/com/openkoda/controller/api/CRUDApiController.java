@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2016-2023, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
+Copyright (c) 2016-2024, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation
@@ -58,7 +58,7 @@ abstract public class CRUDApiController<E extends SearchableOrganizationRelatedE
     public Object getAll(
             @PathVariable(name=ORGANIZATIONID, required = false) Long organizationId,
             @Qualifier("obj") Pageable aPageable,
-            @RequestParam(required = false, defaultValue = "", name = "obj_search") String search) {
+            @RequestParam(required = false, defaultValue = "", name = TABLE_FILTER) String search) {
         debug("[getAll]");
         CRUDControllerConfiguration conf = controllers.apiCrudControllerConfigurationMap.get(key);
         PrivilegeBase privilege = conf.getGetAllPrivilege();

@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2016-2023, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
+Copyright (c) 2016-2024, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation
@@ -24,9 +24,14 @@ package com.openkoda.core.controller.event;
 import com.openkoda.controller.ComponentProvider;
 import com.openkoda.core.flow.Flow;
 import com.openkoda.core.flow.PageModelMap;
+import com.openkoda.core.form.AbstractForm;
+import com.openkoda.core.form.CRUDControllerConfiguration;
+import com.openkoda.core.form.FrontendMappingDefinition;
 import com.openkoda.core.helper.JsonHelper;
 import com.openkoda.core.security.HasSecurityRules;
 import com.openkoda.core.service.event.AbstractApplicationEvent;
+import com.openkoda.core.service.event.CustomApplicationEvent;
+import com.openkoda.dto.CanonicalObject;
 import com.openkoda.dto.NotificationDto;
 import com.openkoda.dto.OrganizationDto;
 import com.openkoda.dto.payment.InvoiceDto;
@@ -35,11 +40,12 @@ import com.openkoda.dto.payment.PlanDto;
 import com.openkoda.dto.payment.SubscriptionDto;
 import com.openkoda.dto.system.FrontendResourceDto;
 import com.openkoda.dto.system.ScheduledSchedulerDto;
-import com.openkoda.dto.user.BasicUser;
+import com.openkoda.dto.user.BasicUserDto;
 import com.openkoda.dto.user.UserRoleDto;
 import com.openkoda.form.EventListenerForm;
 import com.openkoda.form.FrontendMappingDefinitions;
 import com.openkoda.form.SendEventForm;
+import com.openkoda.form.TemplateFormFieldNames;
 import com.openkoda.model.component.event.Event;
 import com.openkoda.model.component.event.EventListenerEntry;
 import org.apache.commons.lang3.StringUtils;
@@ -48,6 +54,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.validation.BindingResult;
 
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -197,16 +204,32 @@ public class AbstractEventListenerController extends ComponentProvider implement
      * @return com.openkoda.core.flow.PageModelMap
      * @throws IOException
      */
-    protected PageModelMap emitEvent(Map<String, String> eventData) throws IOException {
+    protected <A extends AbstractApplicationEvent> PageModelMap emitEvent(Map<String, String> eventData) throws IOException {
         debug("[emitEvent]");
-        Event event = new Event(eventData.remove("event"));
+        String name = StringUtils.defaultString(eventData.remove("event"), eventData.get("dto.name"));
+        Event event = new Event(name);
         Map<String, String> objectData = eventData.entrySet().stream()
                 .filter(e -> e.getKey().startsWith("dto.") && StringUtils.isNotBlank(e.getValue()))
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
         String json = JsonHelper.formMapToJson(objectData);
-        json = "{" + "\"object@" + event.getEventObjectType() + "\":" + json + "}";
-        Object object = JsonHelper.fromDebugJson(json).get("object");
-        AbstractApplicationEvent appEvent = AbstractApplicationEvent.getEvent(event.getEventName());
+        Object object;
+        if(!event.getEventObjectType().equals("java.lang.String")) {
+            json = "{" + "\"object@" + event.getEventObjectType() + "\":" + json + "}";
+            PageModelMap jsonModelMap = JsonHelper.fromDebugJson(json);
+            object = jsonModelMap.get("object") != null ? jsonModelMap.get("object") : jsonModelMap.get("eventData");
+        } else {
+            /*final String finalJson = json;
+            object = new CanonicalObject() {
+                
+                @Override
+                public String notificationMessage() {
+                    return finalJson;
+                }
+            } ;*/
+            object = eventData.get("dto.eventData");
+        }
+        
+        A appEvent = services.applicationEvent.getEvent(event.getEventName(), object);
         return Flow.init(sendEventForm, new SendEventForm(event.getEventString()))
                 .then(a -> services.applicationEvent.emitEvent(appEvent, object))
                 .execute();
@@ -220,7 +243,7 @@ public class AbstractEventListenerController extends ComponentProvider implement
      * @param event {@link Event}
      * @return com.openkoda.form.SendEventForm
      */
-    private SendEventForm getEventFormForClass(Event event) {
+    private AbstractForm getEventFormForClass(Event event) {
         switch (event.getEventObjectType()){
             case "com.openkoda.dto.payment.InvoiceDto":
                 return new SendEventForm<>(new InvoiceDto(), FrontendMappingDefinitions.sendEventInvoiceDto, event.getEventString());
@@ -234,15 +257,43 @@ public class AbstractEventListenerController extends ComponentProvider implement
                 return new SendEventForm<>(new FrontendResourceDto(), FrontendMappingDefinitions.sendEventFrontendResourceDto, event.getEventString());
             case "com.openkoda.dto.system.ScheduledSchedulerDto":
                 return new SendEventForm<>(new ScheduledSchedulerDto(), FrontendMappingDefinitions.sendEventScheduledSchedulerDto, event.getEventString());
-            case "com.openkoda.dto.user.BasicUser":
-                return new SendEventForm<>(new BasicUser(), FrontendMappingDefinitions.sendEventBasicUser, event.getEventString());
+            case "com.openkoda.dto.user.BasicUserDto":
+                return new SendEventForm<>(new BasicUserDto(), FrontendMappingDefinitions.sendEventBasicUser, event.getEventString());
             case "com.openkoda.dto.user.UserRoleDto":
                 return new SendEventForm<>(new UserRoleDto(), FrontendMappingDefinitions.sendEventUserRoleDto, event.getEventString());
             case "com.openkoda.dto.OrganizationDto":
                 return new SendEventForm<>(new OrganizationDto(), FrontendMappingDefinitions.sendEventOrganizationDto, event.getEventString());
             case "com.openkoda.dto.NotificationDto":
                 return new SendEventForm<>(new NotificationDto(), FrontendMappingDefinitions.sendEventNotificationDto, event.getEventString());
+            case "java.lang.String" :
+                if(event.getEventClassName().equals("com.openkoda.core.service.event.CustomApplicationEvent")) {
+                    CustomApplicationEvent<String> dto = CustomApplicationEvent.newInstance(CustomApplicationEvent.class, String.class, event.getEventName());
+                    dto.setName(event.getEventString());
+                    FrontendMappingDefinition newDef = FrontendMappingDefinitions.sendCustomEventForm.createFrontendMappingDefinition(event.getEventName(), null, null,
+                            FrontendMappingDefinitions.sendCustomEventForm.getFields(),
+                            a -> a.text("eventData"));
+                    return new SendEventForm<>(dto, newDef, event.getEventName());
+                }
             default:
+                if(event.getEventClassName().equals("com.openkoda.core.service.event.EntityApplicationEvent")) {
+                    int index = event.getEventName().lastIndexOf('_');
+                    String cleanName = event.getEventName().toLowerCase();
+                    if(index > 0) {
+                        cleanName = cleanName.substring(0, index);
+                    }
+                    
+                    CRUDControllerConfiguration<?, ?, ?> conf = controllers.htmlCrudControllerConfigurationMap.get(cleanName);
+                    try {
+                        CanonicalObject dto = (CanonicalObject) conf.getEntityClass().getDeclaredConstructor().newInstance();
+                        FrontendMappingDefinition newDef = conf.getFrontendMappingDefinition().createFrontendMappingDefinition(event.getEventName(), conf.getGetAllPrivilege(), conf.getGetNewPrivilege(),
+                                conf.getFrontendMappingDefinition().getFields(),
+                                a -> a.dropdownNonDto(TemplateFormFieldNames.EVENT_, TemplateFormFieldNames.EVENTS_));
+                        return new SendEventForm<>(dto, newDef, event.getEventString());
+                    } catch (InstantiationException | IllegalAccessException | IllegalArgumentException
+                            | InvocationTargetException | NoSuchMethodException | SecurityException e) {
+                        warn("[getEventFormForClass] during send event form preparation following issue occur: {}", e.getMessage());
+                    }
+                }
                 return new SendEventForm();
         }
     }

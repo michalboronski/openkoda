@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<th th:fragment="asset">
+        <button type="button" class="btn btn-secondary dropdown-toggle btn-sm ml-4" data-toggle="dropdown" aria-haspopup="true"
+                aria-expanded="false">
+            Status
+        </button>
+        <div class="dropdown-menu">
+            <th:block th:each="status : ${T(openkoda.model.Status).values()}">
+                <a class="dropdown-item" th:href="${'?table_filter='+ status}"
+                   th:text="${status.status}">Status</a>
+            </th:block>
+        </div>
+</th>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+
+</html>

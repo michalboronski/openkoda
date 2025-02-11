@@ -1,0 +1,12 @@
+!!com.openkoda.service.export.dto.FrontendResourceConversionDto
+"accessLevel": "GLOBAL"
+"content": "templates/frontend-resource/global/main-page-fragments.html"
+"controllerEndpoints": [
+  ]
+"includeInSitemap": !!bool "false"
+"module": "core"
+"name": "main-page-fragments"
+"organizationId": !!null "null"
+"requiredPrivilege": !!null "null"
+"resourceType": "RESOURCE"
+"type": "HTML"

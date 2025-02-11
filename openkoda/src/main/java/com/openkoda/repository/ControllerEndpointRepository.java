@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2016-2023, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
+Copyright (c) 2016-2024, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation
@@ -34,7 +34,7 @@ import java.util.List;
 @Repository
 public interface ControllerEndpointRepository extends UnsecuredFunctionalRepositoryWithLongId<ControllerEndpoint>, HasSecurityRules, ComponentEntityRepository<ControllerEndpoint> {
 
-    List<ControllerEndpoint> findByFrontendResourceId(long frontendResourceId);
+    List<ControllerEndpoint> findByFrontendResourceIdOrderById(long frontendResourceId);
 
     ControllerEndpoint findByFrontendResourceIdAndSubPathAndHttpMethod(long frontendResourceId, String subPath, ControllerEndpoint.HttpMethod httpMethod);
     ControllerEndpoint findByFrontendResourceIdAndSubPathAndHttpMethodAndOrganizationId(long frontendResourceId, String subPath, ControllerEndpoint.HttpMethod httpMethod, Long organizationId);
@@ -42,4 +42,9 @@ public interface ControllerEndpointRepository extends UnsecuredFunctionalReposit
     @Modifying
     @Query("delete from ControllerEndpoint where module = :module")
     void deleteByModule(OpenkodaModule module);
+
+    @Modifying
+    @Query("delete from ControllerEndpoint where id = :id")
+    void deleteById(Long id);
+
 }

@@ -1,0 +1,11 @@
+!!com.openkoda.service.export.dto.FormConversionDto
+"code": "code/form/Property.js"
+"module": "core"
+"name": "Property"
+"organizationId": !!null "null"
+"readPrivilege": "manageOrgData"
+"registerApiCrudController": !!bool "true"
+"registerHtmlCrudController": !!bool "true"
+"tableColumns": "propertyId,address,city,state,zipCode,propertyValue,propertyType,coverageId"
+"tableName": "dynamic_PROPERTY"
+"writePrivilege": "manageOrgData"

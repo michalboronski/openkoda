@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2016-2023, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
+Copyright (c) 2016-2024, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation
@@ -61,6 +61,10 @@ public class RoleForm extends AbstractEntityForm<RoleDto, Role> implements Templ
 
     @Override
     public RoleForm populateFrom(Role entity) {
+        if (dto.isEdit()) {
+            dto.type = entity.getType();
+            return this;
+        }
         dto.name = entity.getName();
         dto.type = entity.getType();
         dto.privileges =  entity.getPrivilegesSet().stream().map(PrivilegeBase::name).collect(Collectors.toList());
@@ -83,7 +87,7 @@ public class RoleForm extends AbstractEntityForm<RoleDto, Role> implements Templ
         if (isBlank(dto.name)) {
             br.rejectValue("dto.name", "not.empty");
         }
-        if (isBlank(dto.type)) {
+        if (entity == null && isBlank(dto.type)) {
             br.rejectValue("dto.type", "not.empty");
         }
         return this;

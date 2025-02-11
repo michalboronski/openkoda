@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2016-2023, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
+Copyright (c) 2016-2024, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation
@@ -34,6 +34,7 @@ import com.openkoda.model.User;
 import com.openkoda.repository.FrontendResourceRepository;
 import com.openkoda.repository.event.EventListenerRepository;
 import com.openkoda.repository.event.SchedulerRepository;
+import com.openkoda.repository.file.FileRepository;
 import com.openkoda.repository.organization.OrganizationRepository;
 import com.openkoda.repository.task.EmailRepository;
 import com.openkoda.repository.task.HttpRequestTaskRepository;
@@ -96,6 +97,9 @@ public abstract class AbstractTest {
 
     @MockBean
     protected LoginAndPasswordRepository loginAndPasswordRepository;
+
+    @MockBean
+    protected FileRepository fileRepository;
 
 //    SERVICES
 

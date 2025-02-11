@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2016-2023, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
+Copyright (c) 2016-2024, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation
@@ -24,6 +24,8 @@ package com.openkoda.controller.admin;
 import com.openkoda.App;
 import com.openkoda.core.flow.Flow;
 import com.openkoda.core.security.HasSecurityRules;
+import com.openkoda.model.component.FrontendResource;
+import com.openkoda.service.dynamicentity.DynamicEntityRegistrationService;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -80,15 +82,6 @@ public class SystemHealthController extends AbstractSystemHealthController imple
     @GetMapping(_DASHBOARD)
     public Object adminDashboard(@Qualifier("obj") Pageable pageable) {
         return new ModelAndView("admin-dashboard");
-
-    }
-
-    @PreAuthorize(CHECK_CAN_MANAGE_BACKEND)
-    @GetMapping(_COMPONENTS)
-    public Object components() {
-        return Flow.init()
-                .execute()
-                .mav("components");
 
     }
 

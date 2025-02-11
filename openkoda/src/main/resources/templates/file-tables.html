@@ -7,13 +7,15 @@
 
 <div th:fragment="file(filePage, title)" class="card shadow mb-4">
     <!--PRINTJS-->
-    <link href="/vendor/printjs/print.min.css" rel="stylesheet" type="text/css">
-    <script type="text/javascript" src="/vendor/printjs/print.min.js"></script>
-    <div class="card-header py-3 d-flex flex-row align-items-center ">
+    <link th:href="@{/vendor/printjs/print.min.css}" rel="stylesheet" type="text/css">
+    <script type="text/javascript" th:src="@{/vendor/printjs/print.min.js}"></script>
+    <div class="card-header py-3 d-flex flex-row align-items-start justify-content-end gap-10">
+        <div class="d-flex align-items-start ">
+            <nav th:replace="tables::search('file', ${filePage})"></nav>
+        </div>
     </div>
 
     <div class="card-body pt-0">
-        <nav th:replace="tables::search('file', ${filePage})"></nav>
         <div class="table-responsive">
             <table class="table table-hover">
                 <thead>

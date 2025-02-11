@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2016-2023, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
+Copyright (c) 2016-2024, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation
@@ -22,6 +22,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 package com.openkoda.uicomponent;
 
 import com.openkoda.core.flow.Flow;
+import com.openkoda.core.flow.JsFlowExecutionException;
 import com.openkoda.core.flow.PageModelMap;
 import com.openkoda.core.flow.form.JsFlow;
 import com.openkoda.core.flow.form.JsResultAndModel;
@@ -31,17 +32,23 @@ import com.openkoda.service.map.MapService;
 import com.openkoda.uicomponent.live.LiveComponentProvider;
 import com.vividsolutions.jts.geom.Point;
 import jakarta.inject.Inject;
-import org.graalvm.polyglot.*;
+import org.graalvm.polyglot.Context;
+import org.graalvm.polyglot.HostAccess;
+import org.graalvm.polyglot.Source;
+import org.graalvm.polyglot.Value;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import reactor.util.function.Tuples;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.Collections;
 import java.util.Map;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -85,6 +92,7 @@ public class JsFlowRunner {
         b.putMember("dateTimeNow", (Supplier<LocalDateTime>) () -> componentProvider.util.dateTimeNow());
         b.putMember("parseInt", (Function<String, Integer>) s -> componentProvider.util.parseInt(s));
         b.putMember("parseLong", (Function<String, Long>) s -> componentProvider.util.parseLong(s));
+        b.putMember("parseDecimal", (Function<String, BigDecimal>) s -> componentProvider.util.parseDecimal(s));
         b.putMember("parseDate", (Function<String, LocalDate>) s -> componentProvider.util.parseDate(s));
         b.putMember("parseTime", (Function<String, LocalTime>) s -> componentProvider.util.parseTime(s));
         b.putMember("toString", (Function<Object, String>) s -> componentProvider.util.toString(s));
@@ -95,6 +103,7 @@ public class JsFlowRunner {
         b.putMember("toJSON", (Function<Object, String>) s -> componentProvider.util.toJSON(s));
         b.putMember("decodeURI", (Function<String, String>) s -> componentProvider.util.decodeURI(s));
         b.putMember("encodeURI", (Function<String, String>) s -> componentProvider.util.encodeURI(s));
+        b.putMember("doEvaluateToBoolean", (BiFunction<Object, String, Boolean>) (subject, condition) -> componentProvider.util.doEvaluateToBoolean(subject, condition));
 
         String finalScript = jsFlow.replaceFirst("flow", "let result = flow");
         finalScript +=   ";\nresult";
@@ -109,24 +118,32 @@ public class JsFlowRunner {
     }
 
     public PageModelMap runPreviewFlow(String jsFlow, Map<String, String> params, Long organizationId, long userId, AbstractOrganizationRelatedEntityForm form, String scriptSourceFileName) {
-        Flow f = JsFlow.init(previewComponentProviderInterface, params, form)
+        Flow f = JsFlow.init(previewComponentProviderInterface, params, Collections.emptyList(), form)
                 .thenSet(organizationEntityId, userEntityId, a -> Tuples.of(organizationId, userId));
 
         try {
             JsResultAndModel initialResultAndModel = JsResultAndModel.constructNew(componentProvider, params, form);
             return executeFlow(evaluateJsFlow(jsFlow, f, initialResultAndModel, scriptSourceFileName), initialResultAndModel.model);
-        } catch (PolyglotException e) {
+        } catch (JsFlowExecutionException e) {
             PageModelMap pageModelMap = new PageModelMap();
+            pageModelMap.put(isError, true);
             pageModelMap.put(errorMessage, e.getMessage());
             return pageModelMap;
         }
     }
 
     public PageModelMap runLiveFlow(String jsFlow, Map<String, String> params, Long organizationId, long userId, AbstractOrganizationRelatedEntityForm form, String scriptSourceFileName) {
-        Flow f = JsFlow.init(componentProvider, params, form)
+        Flow f = JsFlow.init(componentProvider, params, Collections.emptyList(), form)
                 .thenSet(organizationEntityId, userEntityId, a -> Tuples.of(organizationId, userId));
 
         JsResultAndModel initialResultAndModel = JsResultAndModel.constructNew(componentProvider, params, form);
-        return executeFlow(evaluateJsFlow(jsFlow, f, initialResultAndModel, scriptSourceFileName), initialResultAndModel.model);
+        try {
+            return executeFlow(evaluateJsFlow(jsFlow, f, initialResultAndModel, scriptSourceFileName), initialResultAndModel.model);
+        } catch (JsFlowExecutionException e) {
+            PageModelMap pageModelMap = new PageModelMap();
+            pageModelMap.put(isError, true);
+            pageModelMap.put(errorMessage, e.getMessage());
+            return pageModelMap;
+        }
     }
 }

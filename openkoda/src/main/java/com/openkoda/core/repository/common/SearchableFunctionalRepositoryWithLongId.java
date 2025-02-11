@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2016-2023, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
+Copyright (c) 2016-2024, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation
@@ -31,6 +31,7 @@ import com.openkoda.core.tracker.LoggingComponentWithRequestId;
 import com.openkoda.model.common.*;
 import com.openkoda.repository.SearchableRepositories;
 import jakarta.persistence.criteria.*;
+import org.apache.commons.beanutils.PropertyUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
@@ -46,10 +47,12 @@ import org.springframework.transaction.annotation.Transactional;
 import reactor.util.function.Tuple3;
 
 import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.stream.Stream;
 
 /**
  * Most of the entities in Openkoda have Long ID.
@@ -97,17 +100,31 @@ public interface SearchableFunctionalRepositoryWithLongId<T extends SearchableEn
         return searchSpecificationFactory(searchTerm);
     }
 
-    static Specification searchSpecificationFactory(String ... searchTerm) {
-        if (ArrayUtils.isEmpty(searchTerm)) {
+    static Specification searchSpecificationFactory(String searchTerm) {
+        String[] orSearchTerms = StringUtils.splitByWholeSeparator(searchTerm, " OR ");
+        return searchSpecificationFactory(orSearchTerms);
+    }
+
+    static Specification searchSpecificationFactory(String [] orSearchTerms) {
+        if (ArrayUtils.isEmpty(orSearchTerms) || Stream.of(orSearchTerms).allMatch( s -> StringUtils.isBlank(s))) {
             return (root, query, cb) -> cb.conjunction();
         }
         return (root, query, cb) -> {
-             Predicate[] searchPredicates = new Predicate[searchTerm.length];
-             for (int i = 0; i < searchTerm.length; i++) {
-                 searchPredicates[i] = cb.like(cb.lower(root.get("indexString")), "%" + StringUtils.lowerCase(StringUtils.defaultString(searchTerm[i], "")) + "%");
-             }
-             return cb.and(searchPredicates);
+            Predicate[] orSearchPredicates = new Predicate[orSearchTerms.length];
+            for (int i = 0; i < orSearchTerms.length; i++) {
+                orSearchPredicates[i] = cb.and(getSearchPredicates(orSearchTerms[i], root, cb));
+            }
+            return cb.or(orSearchPredicates);
         };
+    }
+
+    private static Predicate[] getSearchPredicates(String andSearchTermString, Root root, CriteriaBuilder cb) {
+        String [] searchTerms = StringUtils.split(andSearchTermString, " ");
+        Predicate[] searchPredicates = new Predicate[searchTerms.length];
+        for (int i = 0; i < searchTerms.length; i++) {
+            searchPredicates[i] = cb.like(cb.lower(root.get("indexString")), "%" + StringUtils.lowerCase(StringUtils.defaultString(searchTerms[i], "")) + "%");
+        }
+        return searchPredicates;
     }
 
     default Specification<T> filterSpecification(List<Tuple3<String, FrontendMappingFieldDefinition, String>> filters) {
@@ -125,8 +142,11 @@ public interface SearchableFunctionalRepositoryWithLongId<T extends SearchableEn
                     case number:
                         searchPredicates[i] = cb.equal(root.get(filter.getT1()), new BigDecimal(filter.getT3()));
                         break;
-                    case dropdown, many_to_one:
-                        searchPredicates[i] = cb.equal(root.get(filter.getT1()), filter.getT3());
+                    case dropdown:
+                        searchPredicates[i] = cb.equal(root.get(filter.getT1()).as(String.class), filter.getT3());
+                        break;
+                    case many_to_one:
+                        searchPredicates[i] = cb.equal(root.get(filter.getT2().getValueName()), filter.getT3());
                         break;
                     case date, datetime:
                         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
@@ -285,6 +305,56 @@ public interface SearchableFunctionalRepositoryWithLongId<T extends SearchableEn
         return findOne(secureSpecification(scope, idSpecification(id), null)).orElse(null);
     }
 
+    @Override
+    default String extractAsColumnConcatenation(SecurityScope scope, Long id, String ... columns) {
+        Specification<T> byIdSpec = idSpecification(id);
+        T entity = findOne(secureSpecification(scope, byIdSpec, null)).orElse(null);
+        if (entity == null) return null;
+        List<String> values = new ArrayList<>();
+        for (String column : columns) {
+            String value = readColumnValue(entity, column);
+            values.add(value);
+        }
+        return String.join(";", values);
+    }
+
+    static String readColumnValue(Object object, String fieldPath, String ... fieldPathForTheRecord) {
+        try {
+            String[] pathParts = fieldPath.split("\\.");
+            Object currentObject = object;
+            for (int i = 0; i < pathParts.length; i++) {
+                String currentField = pathParts[i];
+                if (currentObject instanceof Collection) {
+                    Collection<?> collection = (Collection<?>) currentObject;
+                    StringJoiner joiner = new StringJoiner(";");
+                    for (Object item : collection) {
+                        joiner.add(readColumnValue(item, currentField));
+                    }
+                    return joiner.toString();
+                }
+                if (currentObject == null) {
+                    return "";
+//                    throw new MissingFieldValueException("can not read value of %s field in field path %s, because %s is null"
+//                            .formatted(currentField, fieldPathForTheRecord[0], previousOf(currentField, fieldPathForTheRecord[0])));
+                }
+                currentObject = PropertyUtils.getProperty(currentObject, currentField);
+            }
+            return String.valueOf(currentObject);
+        } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static String previousOf(String target, String path) {
+        String[] pathParts = path.split("\\.");
+        for (int i = 1; i < pathParts.length; i++) {
+            if (pathParts[i].equals(target)) {
+                return pathParts[i - 1] + " field";
+            }
+        }
+        return "entity in the context";
+    }
+
     @Nullable
     private static Long extractEntityId(Object idOrEntityOrSpecification) {
         Long id = null;
@@ -303,6 +373,18 @@ public interface SearchableFunctionalRepositoryWithLongId<T extends SearchableEn
         return findAll(secureSpecification(scope, null, null));
     }
 
+    @SuppressWarnings("unchecked")
+    default List<T> findAllById(SecurityScope scope, Object idsOrEntitiesCollectionOrSpecification) {
+        if (idsOrEntitiesCollectionOrSpecification == null) {
+            return Collections.emptyList();
+        }
+        if (idsOrEntitiesCollectionOrSpecification instanceof Specification<?> s) {
+            return findAll(secureSpecification(scope, (Specification<T>) s, null));
+        }
+        List<Long> ids = toIdList(idsOrEntitiesCollectionOrSpecification);
+        return findAll(secureSpecification(scope, idsSpecification(ids), null));
+    }
+    
     @Override
     default <S extends T> S saveOne(SecurityScope scope, S entity) {
         if(hasWritePrivilegeForEntity(scope, entity)){

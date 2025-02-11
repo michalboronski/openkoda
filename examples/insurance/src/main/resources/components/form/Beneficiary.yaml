@@ -1,0 +1,11 @@
+!!com.openkoda.service.export.dto.FormConversionDto
+"code": "code/form/Beneficiary.js"
+"module": "core"
+"name": "Beneficiary"
+"organizationId": !!null "null"
+"readPrivilege": "manageOrgData"
+"registerApiCrudController": !!bool "true"
+"registerHtmlCrudController": !!bool "true"
+"tableColumns": "beneficiaryId,firstName,lastName,relationship,contactNumber,policyId"
+"tableName": "dynamic_BENEFICIARY"
+"writePrivilege": "manageOrgData"

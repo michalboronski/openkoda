@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2016-2023, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
+Copyright (c) 2016-2024, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated 
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation 
@@ -26,6 +26,7 @@ import com.openkoda.core.repository.common.UnsecuredFunctionalRepositoryWithLong
 import com.openkoda.core.security.HasSecurityRules;
 import com.openkoda.model.OpenkodaModule;
 import com.openkoda.model.component.FrontendResource;
+import jakarta.validation.constraints.NotNull;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.Modifying;
@@ -65,11 +66,16 @@ public interface FrontendResourceRepository extends UnsecuredFunctionalRepositor
     @Query("select c from FrontendResource c where c.name = :name")
     FrontendResource findByNameUnsecured(@Param("name") String name);
 
+    FrontendResource findByOrganizationIdAndNameAndAccessLevel(Long organizationId, @NotNull String name, FrontendResource.AccessLevel accessLevel);
+
     @Query("""
             select dbFrontendResource,
             case 
                 when dbFrontendResource.accessLevel = 'PUBLIC' and dbFrontendResource.organizationId is not null then 1
                 when dbFrontendResource.accessLevel = 'PUBLIC' and dbFrontendResource.organizationId is null then 2
+                when dbFrontendResource.accessLevel = 'PUBLIC' and 'GLOBAL' = cast(:accessLevel as text) and dbFrontendResource.organizationId is not null then 3
+                when dbFrontendResource.accessLevel = 'PUBLIC' and 'ORGANIZATION' = cast(:accessLevel as text) and dbFrontendResource.organizationId is not null then 4
+                when dbFrontendResource.accessLevel = 'PUBLIC' and 'ORGANIZATION' = cast(:accessLevel as text) and dbFrontendResource.organizationId is null then 5
                 when dbFrontendResource.accessLevel = 'GLOBAL' and dbFrontendResource.organizationId is not null then 1
                 when dbFrontendResource.accessLevel = 'GLOBAL' and dbFrontendResource.organizationId is null then 2
                 when dbFrontendResource.accessLevel = 'ORGANIZATION' and dbFrontendResource.organizationId is not null then 1
@@ -79,7 +85,8 @@ public interface FrontendResourceRepository extends UnsecuredFunctionalRepositor
                 else 10 end as priority
             from FrontendResource dbFrontendResource where dbFrontendResource.isPage = TRUE and
                 ((:urlPath is not null and dbFrontendResource.name = :urlPath) or (:frontendResourceId is not null and dbFrontendResource.id = :frontendResourceId))
-                and (dbFrontendResource.accessLevel = :accessLevel or dbFrontendResource.accessLevel = 'GLOBAL' and 'ORGANIZATION' = :#{#accessLevel.name()})
+                and (dbFrontendResource.accessLevel = :accessLevel or dbFrontendResource.accessLevel = 'GLOBAL' and 'ORGANIZATION' = :#{#accessLevel.name()}
+                    or dbFrontendResource.accessLevel = 'PUBLIC' and ('GLOBAL' = :#{#accessLevel.name()} or 'ORGANIZATION' = :#{#accessLevel.name()}))
                 and (dbFrontendResource.organizationId = :orgId or dbFrontendResource.organizationId is null ) and
                 ( dbFrontendResource.unsecured = TRUE OR ((?#{principal.hasGlobalPrivilege('readFrontendResource') OR principal.hasGlobalPrivilege('manageFrontendResource')}) = TRUE OR dbFrontendResource.requiredPrivilege IN ?#{principal.globalPrivileges}))
             """)
@@ -120,7 +127,7 @@ public interface FrontendResourceRepository extends UnsecuredFunctionalRepositor
     @Query("select new com.openkoda.core.flow.Tuple(fr.id, fr.name) FROM FrontendResource fr where fr.embeddable = TRUE and fr.resourceType = 'RESOURCE' order by fr.name")
     List<Tuple> findAllEmbeddableResources();
 
-    @Query("select new com.openkoda.core.flow.Tuple(fr.id, fr.name) FROM FrontendResource fr where fr.embeddable = TRUE and fr.resourceType = 'UI_COMPONENT' order by fr.name")
+    @Query("select new com.openkoda.core.flow.Tuple(fr.id, fr.name, fr.userFriendlyName) FROM FrontendResource fr where fr.embeddable = TRUE and fr.resourceType = 'UI_COMPONENT' order by fr.name")
     List<Tuple> findAllEmbeddableUiComponents();
 
     @Query("select fr.name FROM FrontendResource fr where fr.embeddable = FALSE and fr.resourceType = 'RESOURCE' order by fr.name")

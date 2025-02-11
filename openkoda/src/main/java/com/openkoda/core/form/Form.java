@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2016-2023, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
+Copyright (c) 2016-2024, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated 
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation 
@@ -23,6 +23,7 @@ package com.openkoda.core.form;
 
 import com.openkoda.core.flow.PostExecuteProcessablePageAttr;
 import com.openkoda.core.tracker.LoggingComponentWithRequestId;
+import org.apache.commons.lang.ArrayUtils;
 import org.springframework.validation.BindingResult;
 import reactor.util.function.Tuple2;
 
@@ -102,4 +103,11 @@ public abstract class Form implements PostExecuteProcessablePageAttr, LoggingCom
         return Arrays.stream(frontendMappingDefinition.fields).anyMatch(a -> a.isReCaptcha(this));
     }
 
+    public FieldType getFieldType(FrontendMappingFieldDefinition field) {
+        return field.getFieldType(this);
+    }
+
+    public int getFieldIndex(FrontendMappingFieldDefinition field) {
+        return ArrayUtils.indexOf(frontendMappingDefinition.fields, field);
+    }
 }

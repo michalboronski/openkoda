@@ -1,0 +1,38 @@
+{
+  "name": "cypress",
+  "version": "1.0.0",
+  "dependencies": {
+    "@badeball/cypress-cucumber-preprocessor": "^20.0.0",
+    "@bahmutov/cypress-esbuild-preprocessor": "^2.2.0",
+    "cypress-cucumber-preprocessor": "^4.3.1",
+    "fs": "^0.0.1-security",
+    "properties-file": "^3.3.17"
+  },
+  "scripts": {
+    "cy:open": "cypress open ",
+    "cy:run": "cypress run "
+  },
+  "devDependencies": {
+    "@cypress/xpath": "^2.0.3",
+    "cypress": "^13.15.2",
+    "typescript": "^5.3.3"
+  },
+  "compilerOptions": {
+    "moduleResolution": "node16",
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "types": [
+      "cypress"
+    ],
+    "paths": {
+      "@badeball/cypress-cucumber-preprocessor/*": [
+        "./node_modules/@badeball/cypress-cucumber-preprocessor/dist/subpath-entrypoints/*"
+      ]
+    }
+  },
+  "include": [
+    "cypress/**/*.ts",
+    "cypress/**/*.js",
+    "node_modules/@badeball/cypress-cucumber-preprocessor/**/*.js"
+  ]
+}

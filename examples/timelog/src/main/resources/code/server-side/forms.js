@@ -4,12 +4,14 @@ let assignmentRepository = services.data.getRepository('assignment');
 let creativeWorkStatementRepository = services.data.getRepository('creativeWorkStatement');
 
 let timelogForm = services.frontendMappingDefinition.createFrontendMappingDefinition(
-                "timelog", "readOrgData", "readOrgData",
-                a => a.datalist("assignments", f => f.dictionary("assignment"))
-                        .radioList("assignmentId", "assignments").validate(v => v != null ? null : "not.valid")
-                        .date("startedOn")
-                        .text("duration").valueConverters( v => timelogRepository.convertToSeconds(v), v => timelogRepository.convertToHoursString(v) ).validate(v => (v != null && v > 0) ? null : "not.valid")
-                        .text("description"));
+	"timelog", "readOrgData", "readOrgData",
+	a => a.datalist("assignments", f => f.dictionary("assignment"))
+		.radioList("assignmentId", "assignments").validate(v => v != null ? null : "not.valid")
+		.date("startedOn")
+		.text("duration")
+		.valueConverters( v => Java.type("timelog.repository.TimelogRepository").convertToSecondsStatic(v), v => Java.type("timelog.repository.TimelogRepository").convertToHoursStringStatic(v) )
+		.validate(v => (v != null && v > 0) ? null : "not.valid")
+		.text("description"));
 
 
 let ticketForm = services.frontendMappingDefinition.createFrontendMappingDefinition(

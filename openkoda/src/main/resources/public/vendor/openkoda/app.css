@@ -165,20 +165,11 @@ div.rule:first-of-type {
 }
 
 .table-checkbox td, .table-radio td {
-    padding: 0.25rem;
     border: none;
 }
 
 .gap-10 {
     gap: 10px;
-}
-
-.uicomponent-editor .tab-content .tab-pane {
-    display: none;
-}
-
-.uicomponent-editor .tab-content .active {
-    display: block;
 }
 
 .wrap-all {
@@ -238,7 +229,11 @@ form.btn-form {
     opacity: 0.5!important;
 }
 
-.home img.logo {
+.logo {
+    width: 100%;
+}
+
+.home img.logo, .register img.logo, .forgot-password img.logo, .login img.logo {
     width: 200px;
 }
 
@@ -411,10 +406,9 @@ form button[type="button"][disabled] > i {
 .bootstrap-select>.dropdown-toggle {
     border-color: #d1d3e2;
     background-color: #fff;
-}
-
-.nav-tabs + .card, .card.first-card, .first-card div.qq-gallery.qq-uploader, .nav-tabs + .row:first-of-type > div[class^="col-"]:first-of-type > .card {
-    border-top-left-radius: 0;
+    padding: .25rem .8rem;
+    font-size: .875rem;
+    line-height: 1.5;
 }
 
 .nav-tabs {
@@ -426,6 +420,10 @@ input[type=file] {
     height: 100%;
 }
 
+input[type=file]::file-selector-button:hover {
+    cursor: pointer;
+}
+
 em.alert-danger::before {
     content: '\f071';
     font-family: 'Font Awesome 5 Free';
@@ -435,6 +433,10 @@ em.alert-danger::before {
 
 input[type=checkbox] {
     margin: 3px 3px 3px 4px;
+}
+
+.form-control.auto input[type=checkbox] {
+    margin: 0;
 }
 
 .form-control.auto {
@@ -495,8 +497,8 @@ a.entity-link i {
 }
 
 .embedded-preview-title {
-    font-size: 2em;
-    margin-top: 1%;
+    font-size: 1.3em;
+    margin-top: 6px;
 }
 
 
@@ -508,4 +510,24 @@ a.entity-link i {
 }
 .loading .btn-text {
     display: none;
+}
+
+form.genericForm {
+    display: grid;
+    grid-template-rows: auto;
+    grid-template-columns: 1fr;
+}
+
+form.genericForm.formGrid {
+    grid-template-columns: repeat(12, 1fr);
+    column-gap: 10px;
+}
+
+table tr.key-value:first-of-type td {
+    border-top: 0;
+}
+
+ul.one-to-many {
+    padding-inline-start: 0;
+    list-style-position: inside;
 }

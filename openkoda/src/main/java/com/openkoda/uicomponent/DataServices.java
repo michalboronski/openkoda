@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2016-2023, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
+Copyright (c) 2016-2024, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation
@@ -27,6 +27,8 @@ import com.openkoda.model.User;
 import com.openkoda.model.common.SearchableOrganizationRelatedEntity;
 import com.openkoda.uicomponent.annotation.Autocomplete;
 
+import java.util.function.Supplier;
+
 public interface DataServices {
     @Autocomplete(doc="Get data repository for an entity using its key value")
     ScopedSecureRepository<?> getRepository(String entityName);
@@ -42,4 +44,7 @@ public interface DataServices {
     AbstractOrganizationRelatedEntityForm getForm(String frontendMappingName, SearchableOrganizationRelatedEntity entity);
     @Autocomplete(doc="Register a new user or return an existing user's data")
     User registerUserOrReturnExisting(String email, String firstName, String lastName);
+    @Autocomplete(doc="Run in transaction. Executing part of the flow code in separate transaction allows its result to be available immediately for rest parts of the flow code.")
+    Object runInTransaction(Supplier flowCode);
+
 }

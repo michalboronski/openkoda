@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2016-2023, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
+Copyright (c) 2016-2024, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated 
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation 
@@ -23,6 +23,7 @@ package com.openkoda.form;
 
 public interface TemplateFormFieldNames {
     String NAME_= "name";
+    String USER_FRIENDLY_NAME_= "userFriendlyName";
     String LABEL_= "label";
     String TYPE_ = "type";
     String ROLE_TYPES_ = "roleTypes";
@@ -193,4 +194,13 @@ public interface TemplateFormFieldNames {
     String PERSONALIZE_DASHBOARD = "personalizeDashboard";
     String MAIN_BRAND_COLOR = "mainBrandColor";
     String SECOND_BRAND_COLOR = "secondBrandColor";
+    String PLACEHOLDER_TYPES = "placeholderTypes";
+    String DATA_SOURCE = "dataSource";
+    String FILENAME = "filename";
+    String ENTITY_KEY = "entityKey";
+    String CONDITION = "condition";
+    String FILE_ID = "fileId";
+    String DOCUMENT_ = "document";
+    String DOCUMENT_ID = "documentId";
+    String _FILENAME = ".filename";
 }

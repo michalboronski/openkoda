@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2016-2023, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
+Copyright (c) 2016-2024, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated 
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation 
@@ -95,6 +95,9 @@ public abstract class AbstractForm<D> extends Form implements DtoAndEntity<D, Lo
     public void validateField(FrontendMappingFieldDefinition ffd, Function<Object, String> fieldValidator, BindingResult br) {
         Object dtoValue = getField(ffd.getPlainName());
         dtoValue = convertDtoValue(ffd, dtoValue);
+        if(dtoValue instanceof Enum) {
+            dtoValue = dtoValue.toString();
+        }
         String errorCode = fieldValidator.apply(dtoValue);
         if (StringUtils.isNotBlank(errorCode)) {
             br.rejectValue(ffd.getName(isMapDto()), errorCode);
@@ -172,7 +175,7 @@ public abstract class AbstractForm<D> extends Form implements DtoAndEntity<D, Lo
             pdMap.put(pd.getName(), pd);
         }
         for (FrontendMappingFieldDefinition ffd : frontendMappingDefinition.fields) {
-            String ffdName = ffd.getPlainName();
+            String ffdName = ffd.getValueName();
             if (ffdName == null) {
                 continue;
             }
@@ -238,6 +241,14 @@ public abstract class AbstractForm<D> extends Form implements DtoAndEntity<D, Lo
         return false;
     }
 
+    public String getFieldName(FrontendMappingFieldDefinition field) {
+        return field.getName(this.isMapDto());
+    }
+
+    public Object getProvidedValue(FrontendMappingFieldDefinition field) {
+        return field.valueSupplier == null ? null : field.valueSupplier.apply( this );
+    }
+
     /**
      * See {@link AbstractForm#getSafeValue(Object, String, Function)}
      *
@@ -263,7 +274,7 @@ public abstract class AbstractForm<D> extends Form implements DtoAndEntity<D, Lo
         if (singleFieldToUpdate != null && !fieldName.equals(singleFieldToUpdate)) return entityValue;
         FrontendMappingFieldDefinition field = frontendMappingDefinition.findField(fieldName);
         Boolean canWrite = readWriteForField.get(field).getT2();
-        F dtoValue = (F)getField(fieldName);
+        F dtoValue = (F)getField(field.getValueName());
         if (canWrite) return f.apply(dtoValue);
         //here user can't update the field
         if (dtoValue == null) return entityValue;

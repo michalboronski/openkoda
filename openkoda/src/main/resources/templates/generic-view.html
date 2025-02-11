@@ -7,22 +7,30 @@
     <th:block th:if="${genericViewNavigationFragment != null}">
       <nav th:replace="~{__${genericViewNavigationFragment}__}"></nav>
     </th:block>
-    <div class="card shadow mb-4">
+    <div class="card shadow mb-4" th:with="entityKey=${@namehelper.toEntityKey(organizationRelatedObjectKey)}">
       <div class="card-header py-3 d-flex flex-row align-items-center ">
-        <a th:href="${@url.all(organizationEntityId, organizationRelatedObjectKey)}" class="mr-2"><i class="fas fa-arrow-left mr-1"></i><th:block th:text="#{template.all}">All</th:block></a>
+        <a class="btn-primary btn btn-sm" th:href="${@url.all(organizationEntityId, entityKey)}">
+          <th:block th:text="#{template.view.all}">All</th:block>
+        </a>
         <div class="card-header-buttons">
-          <a class="btn-primary btn btn-sm ml-4" th:href="${@url.form(organizationEntityId, organizationRelatedObjectKey, organizationRelatedEntity.id)}">Edit</a>
+          <a class="btn btn-primary btn-sm btn-icon-split"
+             th:href="${@url.form(organizationEntityId, entityKey, organizationRelatedEntity.id)}">
+            <span class="icon text-white-50">
+                <i class="fas fa-edit"></i>
+            </span>
+            <span class="text"><th:block th:text="#{template.edit}">Edit</th:block></span>
+          </a>
         </div>
       </div>
-      <div class="card-header py-0 d-flex flex-row align-items-center">
-        <h6 class="m-0 font-weight-bold" th:if="${navigationFragment == null}" th:text="${#strings.capitalize(organizationRelatedObjectKey)}"></h6>
+      <div class="card-header pt-0 pb-3 d-flex flex-row align-items-center">
+        <h6 class="m-0 font-weight-bold" th:if="${navigationFragment == null}" th:text="${@messages.getDefaultLabel(organizationRelatedObjectKey)}"></h6>
       </div>
       <div class="card-body">
         <div class="table-responsive">
           <table class="table table-hover">
             <th:block th:each="entry : ${organizationRelatedObjectMap}">
-              <th:block th:if="${!#strings.contains('requiredReadPrivilege requiredWritePrivilege', entry.key)}">
-                <tr th:replace="~{forms::show-tr-value(${entry.value}, ${@messages.getFieldLabel(null, entry.key)})}"/>
+              <th:block th:if="${!#strings.contains('requiredReadPrivilege requiredWritePrivilege', entry.key.getName())}">
+                <tr th:replace="~{forms::show-tr-field-value(${entry.key},${entry.value})}"/>
               </th:block>
             </th:block>
           </table>

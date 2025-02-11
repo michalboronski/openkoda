@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2016-2023, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
+Copyright (c) 2016-2024, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation
@@ -21,6 +21,17 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 package com.openkoda.service.export.converter.impl;
 
+import java.util.Map;
+import java.util.Optional;
+
+import com.openkoda.model.component.Scheduler;
+import com.openkoda.service.export.ClasspathComponentImportService;
+import com.openkoda.service.export.dto.SchedulerConversionDto;
+import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
+import org.springframework.data.domain.Example;
+import org.springframework.stereotype.Component;
+
 import com.openkoda.controller.ComponentProvider;
 import com.openkoda.core.helper.PrivilegeHelper;
 import com.openkoda.model.DynamicPrivilege;
@@ -29,10 +40,8 @@ import com.openkoda.model.PrivilegeGroup;
 import com.openkoda.service.export.converter.YamlToEntityConverter;
 import com.openkoda.service.export.converter.YamlToEntityParentConverter;
 import com.openkoda.service.export.dto.PrivilegeConversionDto;
-import org.jetbrains.annotations.NotNull;
-import org.springframework.stereotype.Component;
 
-import java.util.Map;
+import static com.openkoda.service.export.ClasspathComponentImportService.SyncStatus.*;
 
 @Component
 @YamlToEntityParentConverter(dtoClass = PrivilegeConversionDto.class)
@@ -71,4 +80,20 @@ public class PrivilegeYamlToEntityConverter extends ComponentProvider implements
         dynamicPrivilege.setRemovable(true);
         return dynamicPrivilege;
     }
+
+    public ClasspathComponentImportService.SyncStatus checkSyncStatus(PrivilegeConversionDto dto) {
+        Optional<DynamicPrivilege> a = repositories.unsecure.privilege.findOne(
+                Example.of(new DynamicPrivilege(dto.getName())));
+        if (a.isEmpty()) {
+            return NEW;
+        }
+        DynamicPrivilege dp = a.get();
+
+        boolean same = true;
+        same &= StringUtils.equals(String.valueOf(dp.getLabel()), String.valueOf(dto.getLabel()));
+        same &= StringUtils.equals(String.valueOf(dp.getCategory()), String.valueOf(dto.getCategory()));
+        same &= StringUtils.equals(String.valueOf(dp.getGroup()), String.valueOf(dto.getGroup()));
+        return same ? UNCHANGED : MODIFIED;
+    }
+
 }

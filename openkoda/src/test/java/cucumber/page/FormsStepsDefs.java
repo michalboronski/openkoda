@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2016-2023, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
+Copyright (c) 2016-2024, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation
@@ -76,13 +76,6 @@ public class FormsStepsDefs extends StepsBase implements LoggingComponent {
                 Assert.fail(e.getMessage());
             }
         }
-    }
-
-    @And("I click {string} button on {string}")
-    public void iClickButtonOn(String buttonLabel, String formName) {
-        //FIXME: does not work
-        WebElement button = page.waitFor(driver.findElement(By.className(formName)).findElement(By.tagName("button")));
-        button.click();
     }
 
     @And("I should find {string} in the visible table")

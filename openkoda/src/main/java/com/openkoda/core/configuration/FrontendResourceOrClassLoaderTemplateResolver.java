@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2016-2023, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
+Copyright (c) 2016-2024, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation
@@ -123,6 +123,9 @@ public class FrontendResourceOrClassLoaderTemplateResolver extends ClassLoaderTe
                     em.createQuery("select c, case  " +
                                             "when c.accessLevel = 'PUBLIC' and c.organizationId is not null then 1 " +
                                             "when c.accessLevel = 'PUBLIC' and c.organizationId is null then 2 " +
+                                            "when c.accessLevel = 'PUBLIC' and 'GLOBAL' = :p3 and c.organizationId is not null then 3 " +
+                                            "when c.accessLevel = 'PUBLIC' and 'ORGANIZATION' = :p3 and c.organizationId is not null then 4 " +
+                                            "when c.accessLevel = 'PUBLIC' and 'ORGANIZATION' = :p3 and c.organizationId is null then 5 " +
                                             "when c.accessLevel = 'GLOBAL' and c.organizationId is not null then 1 " +
                                             "when c.accessLevel = 'GLOBAL' and c.organizationId is null then 2 " +
                                             "when c.accessLevel = 'ORGANIZATION' and c.organizationId is not null then 1 " +
@@ -133,7 +136,8 @@ public class FrontendResourceOrClassLoaderTemplateResolver extends ClassLoaderTe
                                             "from FrontendResource c " +
                                             "where " +
                                             "c.name = :p1 and " +
-                                            "(cast (c.accessLevel as text) = :p3 or (cast (c.accessLevel as text) = 'GLOBAL' and 'ORGANIZATION' = :p3)) and " +
+                                            "(cast (c.accessLevel as text) = :p3 or (cast (c.accessLevel as text) = 'GLOBAL' and 'ORGANIZATION' = :p3)" +
+                                            " or (cast (c.accessLevel as text) = 'PUBLIC' and ('GLOBAL' = :p3 OR 'ORGANIZATION' = :p3))) and " +
                                             "(c.organizationId = :p2 OR c.organizationId is NULL) order by priority limit 1"
                                     , Object[].class)
                             .setParameter("p1", filteredTemplatePath.getFrontendResourceEntryName())

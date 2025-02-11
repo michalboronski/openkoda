@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2016-2023, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
+Copyright (c) 2016-2024, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated 
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation 
@@ -21,6 +21,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 package com.openkoda.repository;
 
+import com.openkoda.core.helper.NameHelper;
 import com.openkoda.core.repository.common.UnsecuredFunctionalRepositoryWithLongId;
 import com.openkoda.core.security.HasSecurityRules;
 import com.openkoda.model.OpenkodaModule;
@@ -38,9 +39,11 @@ import static java.util.stream.Collectors.toMap;
 public interface FormRepository extends UnsecuredFunctionalRepositoryWithLongId<Form>, HasSecurityRules, ComponentEntityRepository<Form> {
 
     Form findByName(String name);
+
     default Map<String,String> getNameAndTableNameAsMap(){
-        return getNameAndTableName().stream().collect(toMap(o -> (String) o[0], o-> (String) o[1]));
+        return getNameAndTableName().stream().collect(toMap(o -> NameHelper.toEntityKey((String) o[0]), o-> (String) o[1]));
     }
+
     @Query(value = "SELECT name, tableName FROM Form")
     List<Object[]> getNameAndTableName();
 

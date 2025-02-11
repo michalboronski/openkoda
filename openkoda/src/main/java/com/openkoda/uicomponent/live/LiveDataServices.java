@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2016-2023, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
+Copyright (c) 2016-2024, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation
@@ -26,6 +26,7 @@ import com.openkoda.core.customisation.FrontendMappingMap;
 import com.openkoda.core.form.AbstractOrganizationRelatedEntityForm;
 import com.openkoda.core.form.CRUDControllerConfiguration;
 import com.openkoda.core.form.ReflectionBasedEntityForm;
+import com.openkoda.core.helper.NameHelper;
 import com.openkoda.core.multitenancy.TenantResolver;
 import com.openkoda.core.repository.common.ScopedSecureRepository;
 import com.openkoda.core.security.HasSecurityRules;
@@ -38,7 +39,11 @@ import com.openkoda.service.user.UserService;
 import com.openkoda.uicomponent.DataServices;
 import jakarta.inject.Inject;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.BeanPropertyBindingResult;
+
+import java.util.function.Supplier;
 
 @Component
 public class LiveDataServices implements DataServices {
@@ -51,17 +56,17 @@ public class LiveDataServices implements DataServices {
     @Inject
     private UserService userService;
 
-    public ScopedSecureRepository<?> getRepository(String entityKey) {
-        return SearchableRepositories.getSearchableRepository(entityKey, HasSecurityRules.SecurityScope.USER_IN_ORGANIZATION);
+    public ScopedSecureRepository<?> getRepository(String entityKeyOrFormName) {
+        return SearchableRepositories.getSearchableRepository(entityKeyOrFormName, HasSecurityRules.SecurityScope.ALL);
     }
-    public ScopedSecureRepository<?> getRepository(String entityKey, HasSecurityRules.SecurityScope securityScope) {
-        return SearchableRepositories.getSearchableRepository(entityKey, securityScope);
+    public ScopedSecureRepository<?> getRepository(String entityKeyOrFormName, HasSecurityRules.SecurityScope securityScope) {
+        return SearchableRepositories.getSearchableRepository(entityKeyOrFormName, securityScope);
     }
-    public ScopedSecureRepository<?> getRepository(String entityKey, String securityScope) {
-        return SearchableRepositories.getSearchableRepository(entityKey, HasSecurityRules.SecurityScope.valueOf(securityScope));
+    public ScopedSecureRepository<?> getRepository(String entityKeyOrFormName, String securityScope) {
+        return SearchableRepositories.getSearchableRepository(entityKeyOrFormName, HasSecurityRules.SecurityScope.valueOf(securityScope));
     }
-    public AbstractOrganizationRelatedEntityForm getForm(String frontendMappingName, SearchableOrganizationRelatedEntity entity) {
-        FrontendMapping frontendMapping = frontendMappingMap.get(frontendMappingName);
+    public AbstractOrganizationRelatedEntityForm getForm(String entityKeyOrFormName, SearchableOrganizationRelatedEntity entity) {
+        FrontendMapping frontendMapping = frontendMappingMap.get(NameHelper.toEntityKey(entityKeyOrFormName));
         CRUDControllerConfiguration conf = CRUDControllerConfiguration.getBuilder("form", frontendMapping.definition(), frontendMapping.repository(), ReflectionBasedEntityForm.class);
         Long orgId = TenantResolver.getTenantedResource().organizationId;
         if(entity == null) {
@@ -85,12 +90,18 @@ public class LiveDataServices implements DataServices {
         return userService.registerUserOrReturnExisting(form, false);
     }
 
-    public AbstractOrganizationRelatedEntityForm getForm(String frontendMappingName) {
-        return getForm(frontendMappingName, null);
+    @Override
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public Object runInTransaction(Supplier flowCode) {
+        return flowCode.get();
+    }
+
+    public AbstractOrganizationRelatedEntityForm getForm(String entityKeyOrFormName) {
+        return getForm(entityKeyOrFormName, null);
     }
 
     public SearchableOrganizationRelatedEntity saveForm(AbstractOrganizationRelatedEntityForm form, SearchableOrganizationRelatedEntity entity) {
-        FrontendMapping frontendMapping = frontendMappingMap.get(form.frontendMappingDefinition.name);
+        FrontendMapping frontendMapping = frontendMappingMap.get(NameHelper.toEntityKey(form.frontendMappingDefinition.name));
 
         CRUDControllerConfiguration conf = CRUDControllerConfiguration.getBuilder("form", frontendMapping.definition(), frontendMapping.repository(), ReflectionBasedEntityForm.class);
         Long orgId = TenantResolver.getTenantedResource().organizationId;

@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2016-2023, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
+Copyright (c) 2016-2024, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated 
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation 
@@ -27,18 +27,16 @@ import com.openkoda.core.flow.BasePageAttributes;
 import com.openkoda.core.flow.PageAttr;
 import com.openkoda.core.flow.PageModelMap;
 import com.openkoda.core.flow.mbean.LoggingEntriesStack;
-import com.openkoda.core.form.AbstractForm;
-import com.openkoda.core.form.AbstractOrganizationRelatedEntityForm;
-import com.openkoda.core.form.FrontendMappingDefinition;
-import com.openkoda.core.form.FrontendMappingFieldDefinition;
+import com.openkoda.core.form.*;
 import com.openkoda.core.helper.ReadableCode;
 import com.openkoda.core.repository.common.ProfileSettingsRepository;
+import com.openkoda.core.service.event.CustomApplicationEvent;
 import com.openkoda.dto.CanonicalObject;
 import com.openkoda.dto.OrganizationDto;
 import com.openkoda.dto.OrganizationRelatedObject;
 import com.openkoda.dto.ServerJsThreadDto;
 import com.openkoda.dto.web.OrganizationWebPageDto;
-import com.openkoda.dto.web.WebPage;
+import com.openkoda.dto.web.WebPageDto;
 import com.openkoda.form.*;
 import com.openkoda.integration.model.configuration.IntegrationModuleOrganizationConfiguration;
 import com.openkoda.model.*;
@@ -53,6 +51,7 @@ import com.openkoda.model.component.event.EventListenerEntry;
 import com.openkoda.model.file.File;
 import com.openkoda.model.notification.Notification;
 import com.openkoda.repository.notifications.NotificationKeeper;
+import com.openkoda.service.export.ClasspathComponentImportService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -143,11 +142,14 @@ public interface PageAttributes extends BasePageAttributes, ReadableCode {
     PageAttr<String> uiComponentUrl = new PageAttr<>("uiComponentUrl");
     PageAttr<EventListenerForm> eventListenerForm = new PageAttr<>("eventListenerForm");
     PageAttr<AbstractForm<?>> sendEventForm = new PageAttr<AbstractForm<?>>("sendEventForm");
+    PageAttr<CreateEventForm> createEventForm = new PageAttr<CreateEventForm>("createEventForm");
     PageAttr<SchedulerForm> schedulerForm = new PageAttr<>("schedulerForm");
     PageAttr<Page<EventListenerEntry>> eventListenerPage = new PageAttr<>("eventListenerPage");
+    PageAttr<Page<CustomApplicationEvent<?>>> customEventPage = new PageAttr<>("customEventPage");
     PageAttr<Page<Scheduler>> schedulerPage = new PageAttr<>("schedulerPage");
     PageAttr<EventListenerEntry> eventListenerEntity = new PageAttr<>("eventListenerEntity");
     PageAttr<EventListenerEntry> eventListenerEntityToUnregister = new PageAttr<>("eventListenerEntityToUnregister");
+    PageAttr<CustomApplicationEvent<?>> eventToUnregister = new PageAttr<>("eventToUnregister");
     PageAttr<Scheduler> schedulerEntity = new PageAttr<>("schedulerEntity");
     PageAttr<Form> formEntity = new PageAttr<>("formEntity");
     PageAttr<String> clientToken = new PageAttr<>("clientToken");
@@ -161,14 +163,14 @@ public interface PageAttributes extends BasePageAttributes, ReadableCode {
     PageAttr<Integer> bufferSize = new PageAttr<>("bufferSize");
     PageAttr<Page<GlobalEntitySearch>> searchPage = new PageAttr<>("searchPage");
     PageAttr<OrganizationRelatedObject> organizationRelatedObject = new PageAttr<>("organizationRelatedObject");
-    PageAttr<Map<String, Object>> organizationRelatedObjectMap = new PageAttr<>("organizationRelatedObjectMap");
+    PageAttr<Map<FrontendMappingFieldDefinition, Object>> organizationRelatedObjectMap = new PageAttr<>("organizationRelatedObjectMap");
     PageAttr<String> organizationRelatedObjectKey = new PageAttr<>("organizationRelatedObjectKey");
     PageAttr<SearchableOrganizationRelatedEntity> organizationRelatedEntity = new PageAttr<>("organizationRelatedEntity");
     PageAttr<Page<SearchableOrganizationRelatedEntity>> organizationRelatedEntityPage = new PageAttr<>("organizationRelatedEntityPage");
     PageAttr<ModelAndView> modelAndView = new PageAttr<>("modelAndView");
     PageAttr<String> defaultLayout = new PageAttr<>("defaultLayout");
     PageAttr<String> resourcesVersion = new PageAttr<>("resourcesVersion");
-    PageAttr<WebPage> webPageDto = new PageAttr<>("webPageDto");
+    PageAttr<WebPageDto> webPageDto = new PageAttr<>("webPageDto");
     PageAttr<OrganizationWebPageDto> organizationWebPageDto = new PageAttr<>("organizationWebPageDto");
     PageAttr<List<Notification>> readNotificationsList = new PageAttr<>("readNotificationsList");
     PageAttr<List<Notification>> unreadNotificationsList = new PageAttr<>("unreadNotificationsList");
@@ -176,6 +178,7 @@ public interface PageAttributes extends BasePageAttributes, ReadableCode {
     PageAttr<String> unreadNotificationsIdListString = new PageAttr<>("unreadNotificationsIdListString");
     PageAttr<String> notificationMessage = new PageAttr<>("notificationMessage");
     PageAttr<String> menuItem = new PageAttr<>("menuItem");
+    PageAttr<FormGridIndexer> genericFormGridIndexer = new PageAttr<>("genericFormGridIndexer");
     PageAttr<SystemHealthStatus> systemHealthStatus = new PageAttr<>("systemHealthStatus");
     PageAttr<String> databaseUpdateScript = new PageAttr<>("databaseUpdateScript");
     PageAttr<CanonicalObject> canonicalObject = new PageAttr<>("canonicalObject");
@@ -188,6 +191,8 @@ public interface PageAttributes extends BasePageAttributes, ReadableCode {
     PageAttr<String> plainApiKeyString = new PageAttr<>("plainApiKeyString");
     PageAttr<String> baseUrl = new PageAttr<>("baseUrl");
     PageAttr<String> errorMessage = new PageAttr<>("errorMessage");
+    PageAttr<String> errorCause = new PageAttr<>("errorCause");
+    PageAttr<String> errorMessageDetails = new PageAttr<>("errorMessageDetails");
     PageAttr<HttpHeaders> httpHeaders = new PageAttr<>("httpHeaders");
     PageAttr<HttpStatus> errorHttpStatus = new PageAttr<>("errorHttpStatus");
     PageAttr<List<String>> errorList = new PageAttr<>("errorList");
@@ -208,14 +213,17 @@ public interface PageAttributes extends BasePageAttributes, ReadableCode {
     PageAttr<List<Tuple5<ProfileSettingsRepository, Function, PageAttr, String, String>>> additionalSettingsForms = new PageAttr<>("additionalSettingsForms");
     PageAttr<Boolean> isValid = new PageAttr<>("isValid");
     PageAttr<String> redirectUrl = new PageAttr<>("redirectUrl");
+    PageAttr<String> webEndpointHtmlView = new PageAttr<>("webEndpointHtmlView");
     PageAttr<String> reload = new PageAttr<>("reload");
     PageAttr<PageBuilderController.EmbeddableComponents> embeddableComponents = new PageAttr<>("embeddableComponents");
     PageAttr<String> importLog = new PageAttr<>("importLog");
+    PageAttr<Map<String, ClasspathComponentImportService.SyncStatus>> componentsSyncStatus = new PageAttr<>("componentsSyncStatus");
     PageAttr<File> file = new PageAttr<>("file");
     PageAttr<String> query = new PageAttr<>("query");
     PageAttr<String> fileName = new PageAttr<>("fileName");
     PageAttr<Map<String, Object>> buildInfo = new PageAttr<>("buildInfo");
     PageAttr<Boolean> isAuditable = new PageAttr<>("isAuditable");
+    PageAttr<Boolean> isUpdate = new PageAttr<>("isUpdate");
 
     PageAttr<String> remainingParameters = new PageAttr<>("remainingParameters");
     PageAttr<Map<String, String>> remainingParametersMap = new PageAttr<>("remainingParametersMap");

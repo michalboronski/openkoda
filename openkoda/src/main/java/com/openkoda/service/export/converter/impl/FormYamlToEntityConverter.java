@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2016-2023, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
+Copyright (c) 2016-2024, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation
@@ -23,26 +23,38 @@ package com.openkoda.service.export.converter.impl;
 
 import com.openkoda.controller.ComponentProvider;
 import com.openkoda.core.helper.PrivilegeHelper;
+import com.openkoda.model.component.ControllerEndpoint;
 import com.openkoda.model.component.Form;
+import com.openkoda.service.export.ClasspathComponentImportService;
 import com.openkoda.service.export.converter.YamlToEntityConverter;
 import com.openkoda.service.export.converter.YamlToEntityParentConverter;
+import com.openkoda.service.export.dto.ControllerEndpointConversionDto;
 import com.openkoda.service.export.dto.FormConversionDto;
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Example;
 import org.springframework.stereotype.Component;
 
 import java.util.Map;
+import java.util.Optional;
 
+import static com.openkoda.service.export.ClasspathComponentImportService.SyncStatus.*;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 @Component
 @YamlToEntityParentConverter(dtoClass = FormConversionDto.class)
 public class FormYamlToEntityConverter extends ComponentProvider implements YamlToEntityConverter<Form, FormConversionDto> {
 
+    @Value("${components.export.syncWithFilesystem:false}")
+    private boolean syncWithFilesystem;
+
     @Override
     public Form convertAndSave(FormConversionDto dto, String filePath) {
         debug("[convertAndSave]");
         Form form = getForm(dto, loadResourceAsString(dto.getCode()));
         services.dynamicEntity.createDynamicTableIfNotExists(form.getTableName());
+        services.dynamicEntity.createDynamicEntityIfNotExists(form.getTableName());
         return repositories.secure.form.saveOne(form);
     }
 
@@ -51,6 +63,7 @@ public class FormYamlToEntityConverter extends ComponentProvider implements Yaml
         debug("[convertAndSave]");
         Form form = getForm(dto, resources.get(dto.getCode()));
         services.dynamicEntity.createDynamicTableIfNotExists(form.getTableName());
+        services.dynamicEntity.createDynamicEntityIfNotExists(form.getTableName());
         form = repositories.secure.form.saveOne(form);
         return form;
     }
@@ -76,4 +89,37 @@ public class FormYamlToEntityConverter extends ComponentProvider implements Yaml
         form.setCode(code);
         return form;
     }
+
+    @Override
+    public boolean hasContent() {
+        return true;
+    }
+
+    public ClasspathComponentImportService.SyncStatus checkSyncStatus(FormConversionDto dto) {
+        Form f = repositories.unsecure.form.findByName(dto.getName());
+        if (f == null) {
+            return NEW;
+        }
+
+        boolean same = true;
+        same &= f.isRegisterApiCrudController() == dto.isRegisterApiCrudController();
+        same &= f.isRegisterHtmlCrudController() == dto.isRegisterHtmlCrudController();
+        same &= f.isShowOnOrganizationDashboard() == dto.isShowOnOrganizationDashboard();
+        same &= StringUtils.equals(String.valueOf(f.getReadPrivilegeAsString()), String.valueOf(dto.getReadPrivilege()));
+        same &= StringUtils.equals(String.valueOf(f.getWritePrivilegeString()), String.valueOf(dto.getWritePrivilege()));
+        same &= StringUtils.equals(String.valueOf(f.getTableColumns()), String.valueOf(dto.getTableColumns()));
+        same &= StringUtils.equals(String.valueOf(f.getFilterColumns()), String.valueOf(dto.getFilterColumns()));
+        same &= StringUtils.equals(String.valueOf(f.getTableName()), String.valueOf(dto.getTableName()));
+        same &= StringUtils.equals(String.valueOf(f.getTableView()), String.valueOf(dto.getTableView()));
+
+        if (same) {
+            String code = loadResourceAsString(dto.getCode());
+            same = StringUtils.equals(code, f.getCode());
+        }
+
+        return same ? UNCHANGED : MODIFIED;
+    }
+
+
+
 }

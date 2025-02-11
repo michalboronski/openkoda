@@ -33,6 +33,7 @@ import java.util.List;
 public interface BasePageAttributes {
     PageAttr<Boolean> isError = new PageAttr<>("isError");
     PageAttr<String> message = new PageAttr<>("message");
+    PageAttr<Boolean> _debugForm = new PageAttr<>("_debugForm");
     PageAttr<String> error = new PageAttr<>("error");
     PageAttr<Exception> exception = new PageAttr<>("exception");
     PageAttr<BindingResult> bindingResult = new PageAttr<>("bindingResult");

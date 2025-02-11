@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2016-2023, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
+Copyright (c) 2016-2024, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation
@@ -23,18 +23,32 @@ package com.openkoda.service.export.converter.impl;
 
 import com.openkoda.controller.ComponentProvider;
 import com.openkoda.model.component.ControllerEndpoint;
+import com.openkoda.repository.ControllerEndpointRepository;
+import com.openkoda.service.export.ClasspathComponentImportService.SyncStatus;
 import com.openkoda.service.export.converter.YamlToEntityConverter;
 import com.openkoda.service.export.dto.ControllerEndpointConversionDto;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Example;
 import org.springframework.stereotype.Component;
 
 import java.util.Map;
+import java.util.Optional;
 
 import static com.openkoda.service.export.FolderPathConstants.SUBDIR_ORGANIZATION_PREFIX;
 
 @Component
 public class ControllerEndpointYamlToEntityConverter extends ComponentProvider implements YamlToEntityConverter<ControllerEndpoint, ControllerEndpointConversionDto> {
+    private final ControllerEndpointRepository controllerEndpointRepository;
+    @Value("${components.export.syncWithFilesystem:false}")
+    private boolean syncWithFilesystem;
+
+    public ControllerEndpointYamlToEntityConverter(ControllerEndpointRepository controllerEndpointRepository) {
+        super();
+        this.controllerEndpointRepository = controllerEndpointRepository;
+    }
+
     @Override
     public ControllerEndpoint convertAndSave(ControllerEndpointConversionDto dto, String filePath) {
         debug("[convertAndSave]");
@@ -74,6 +88,35 @@ public class ControllerEndpointYamlToEntityConverter extends ComponentProvider i
         controllerEndpoint.setResponseType(dto.getResponseType());
         controllerEndpoint.setModuleName(dto.getModule());
         return controllerEndpoint;
+    }
+
+    @Override
+    public boolean hasContent() {
+        return true;
+    }
+
+    @Override
+    public SyncStatus checkSyncStatus(ControllerEndpointConversionDto dto) {
+        Optional<ControllerEndpoint> a = controllerEndpointRepository.findOne(
+                Example.of(new ControllerEndpoint(
+                        dto.getOrganizationId(),
+                        dto.getModule(),
+                        dto.getSubpath(),
+                        ControllerEndpoint.HttpMethod.valueOf(dto.getHttpMethod()))));
+        if (a.isEmpty()) {
+            return SyncStatus.NEW;
+        }
+        ControllerEndpoint ce = a.get();
+
+        boolean same = true;
+        same &= StringUtils.equals(String.valueOf(ce.getResponseType()), String.valueOf(dto.getResponseType()));
+        same &= StringUtils.equals(String.valueOf(ce.getHttpHeaders()),  String.valueOf(dto.getHttpHeaders()));
+        same &= StringUtils.equals(String.valueOf(ce.getModelAttributes()), String.valueOf(dto.getModelAttributes()));
+        if (same) {
+            String code = loadResourceAsString(dto.getCode());
+            same = StringUtils.equals(code, ce.getCode());
+        }
+        return same ? SyncStatus.UNCHANGED : SyncStatus.MODIFIED;
     }
 
 }

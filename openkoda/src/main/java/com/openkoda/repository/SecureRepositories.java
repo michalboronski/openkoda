@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2016-2023, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
+Copyright (c) 2016-2024, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation
@@ -23,6 +23,7 @@ package com.openkoda.repository;
 
 import com.openkoda.repository.admin.SecureAuditRepository;
 import com.openkoda.repository.ai.SecureQueryReportRepository;
+import com.openkoda.repository.event.SecureCustomEventRepository;
 import com.openkoda.repository.event.SecureEventListenerRepository;
 import com.openkoda.repository.event.SecureSchedulerRepository;
 import com.openkoda.repository.file.SecureFileRepository;
@@ -48,6 +49,7 @@ public class SecureRepositories {
     @Inject public SecureRoleRepository role;
     @Inject public SecureDynamicPrivilegeRepository privilege;
     @Inject public SecureEventListenerRepository eventListener;
+    @Inject public SecureCustomEventRepository customEvent;
     @Inject public SecureSchedulerRepository scheduler;
     @Inject public SecureUserRoleRepository userRole;
     @Inject public SecureUserRepository user;

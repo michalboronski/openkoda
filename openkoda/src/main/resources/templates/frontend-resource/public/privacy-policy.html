@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Privacy Policy</title>
-    <link rel="icon" type="image/png" th:href="${@environment.getProperty('application.icon')}">
+    <link rel="icon" type="image/png" th:href="${@environment.getProperty('server.servlet.context-path') + @environment.getProperty('application.icon')}">
 
     <!-- Custom head scripts -->
     <th:block th:replace="~{frontend-resource/global/head-customization::scripts}"></th:block>

@@ -1,0 +1,12 @@
+!!com.openkoda.service.export.dto.FrontendResourceConversionDto
+"accessLevel": "PUBLIC"
+"content": "templates/frontend-resource/public/register.html"
+"controllerEndpoints": [
+  ]
+"includeInSitemap": !!bool "false"
+"module": "core"
+"name": "register"
+"organizationId": !!null "null"
+"requiredPrivilege": !!null "null"
+"resourceType": "RESOURCE"
+"type": "HTML"

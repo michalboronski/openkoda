@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2016-2023, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
+Copyright (c) 2016-2024, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation
@@ -43,7 +43,11 @@ import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.zip.ZipOutputStream;
@@ -142,7 +146,7 @@ public class ComponentExportService implements LoggingComponent {
                         if (!Files.isDirectory(path)) {
                             String fileName = path.getFileName().toString();
                             zipUtils.addURLFileToZip(path.toUri().toURL(),
-                                    (fileName.contains("application") ? EXPORT_PATH : "") + fileName, zos);
+                                    (fileName.endsWith(".java") ? EXPORT_JAVA_CUSTOM_PATH_ : (fileName.contains("application") ? EXPORT_PATH_ : ""))  + fileName, zos);
                         }
                     }
                 }
@@ -152,7 +156,7 @@ public class ComponentExportService implements LoggingComponent {
                     URL nestedUrl = getClass().getClassLoader().getResource(string);
                     String fileName = new File(string).getName();
                     zipUtils.addURLFileToZip(nestedUrl,
-                            (fileName.contains("application") ? EXPORT_PATH : "") + fileName, zos);
+                            (fileName.endsWith(".java") ? EXPORT_JAVA_CUSTOM_PATH_ : (fileName.contains("application") ? EXPORT_PATH_ : ""))  + fileName, zos);
                 }
             }
 //          add migration script if exists

@@ -10,7 +10,7 @@
 
         <div class="card shadow mb-4" th:fragment="threadCards" th:each="t : ${serverJsThreads}">
             <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-                <h5 class="m-0 font-weight-bold" th:text="${'Thread: ' + t.key.id}">Cluster</h5>
+                <h6 class="m-0 font-weight-bold" th:text="${'Thread: ' + t.key.id}">Cluster</h6>
                 <h6 class="m-0" th:text="${'State: ' + t.key.state}"></h6>
             </div>
             <div class="card-body" >

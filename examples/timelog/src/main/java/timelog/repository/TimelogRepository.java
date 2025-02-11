@@ -30,7 +30,7 @@ public interface TimelogRepository extends SecureRepository<Timelog> {
     record Week(List<Day> days, Integer sum, LocalDate date) {};
     record Month(List<Week> weeks, Map<Assignment, Integer> cwAssigmentSums, Integer sum, Integer creativeWorkSum, LocalDate date) {};
 
-    default Month summarize(List<Timelog> timelogs, int monthOffset) {
+    static Month summarize(List<Timelog> timelogs, int monthOffset) {
         LocalDate dayStart = LocalDate.now().minusMonths(monthOffset).withDayOfMonth(1);
         Stream<LocalDate> stream = dayStart.datesUntil(dayStart.plusMonths(1));
         Map<Integer, Map<Integer, List<Timelog>>> weeksDaysSummary = new LinkedHashMap<>();
@@ -91,22 +91,22 @@ public interface TimelogRepository extends SecureRepository<Timelog> {
         return new Month(weeks, cwAssigmentSums, monthSum, creativeWorkSum, dayStart);
     }
 
-    default String convertToAssignmentsDescriptionString(Month month){
+    static String convertToAssignmentsDescriptionString(Month month){
 
         return month.cwAssigmentSums().entrySet().stream()
-                .map(entry -> entry.getKey().getDescription() + ": " + convertToHoursString(entry.getValue()))
+                .map(entry -> entry.getKey().getDescription() + ": " + convertToHoursStringStatic(entry.getValue()))
                 .collect(Collectors.joining(", \n"));
     }
 
-    default Integer getMonthFromSummary(Month month){
+    static Integer getMonthFromSummary(Month month){
         return month.date.getMonthValue();
     }
 
-    default Integer getYearFromSummary(Month month){
+    static Integer getYearFromSummary(Month month){
         return month.date.getYear();
     }
 
-    private boolean isWeekend(LocalDate localDate) {
+    static boolean isWeekend(LocalDate localDate) {
         return (localDate.get(ChronoField.DAY_OF_WEEK) == 6)
                 || (localDate.get(ChronoField.DAY_OF_WEEK) == 7);
     }

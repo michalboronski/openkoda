@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2016-2023, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
+Copyright (c) 2016-2024, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation
@@ -45,10 +45,12 @@ public interface NotificationRepository extends UnsecuredFunctionalRepositoryWit
     @Query("SELECT new com.openkoda.repository.notifications.NotificationKeeper(n, rn.notificationId) FROM Notification n " +
             "LEFT JOIN n.readNotifications rn WHERE " +
             "NOT((n.hiddenFromAuthor = TRUE) AND (:userId = n.createdBy.createdById)) AND" +
-            "(((n.organizationId IS NULL AND n.userId=:userId) OR " +
-            "(n.userId IS NULL AND n.organizationId IN :organizationIds) OR " +
-            "(n.userId IS NULL AND n.organizationId IS NULL)) " +
+            "(((n.userId=:userId AND n.roleId IS NULL AND n.organizationId IS NULL) OR " +              // user
+            "(n.userId IS NULL AND n.roleId IS NULL AND n.organizationId IN :organizationIds) OR " +    // organization
+            "(n.userId IS NULL AND n.roleId IS NULL AND n.organizationId IS NULL) OR " +                // global
+            "(n.userId IS NULL AND n.roleId IN :roleIds AND n.organizationId IS NULL) OR " +            // role global
+            "(n.userId IS NULL AND n.roleId IN :roleIds AND n.organizationId IN :organizationIds))" +   // role in organization
             ") ORDER BY rn.notificationId DESC, n.id DESC")
-    Page<NotificationKeeper> findAll(@Param("userId") Long userId, @Param("organizationIds") Set<Long> organizationIds, Pageable pageable);
+    Page<NotificationKeeper> findAll(@Param("userId") Long userId, @Param("roleIds") Set<Long> roleIds, @Param("organizationIds") Set<Long> organizationIds, Pageable pageable);
 
 }

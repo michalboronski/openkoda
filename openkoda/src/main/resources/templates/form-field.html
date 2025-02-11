@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+</head>
+<body>
+
+<div th:fragment="text">
+    <th:block th:replace="~{forms::text-base('', ${genericForm.getFieldName(field)}, ${genericForm.getProvidedValue(field)},
+        ${field.getLabel()}, ${field.getTooltip()}, ${field.getPlaceholder()}, false, !${genericForm.canWriteField(field)}, '', ${field.getAdditionalCss()})}" />
+</div>
+
+<div th:fragment="password">
+    <th:block th:replace="~{forms::password-base('', ${genericForm.getFieldName(field)}, ${field.getLabel()}, !${genericForm.canWriteField(field)},
+        !${genericForm.canWriteField(field)}, '', ${field.getAdditionalCss()})}" />
+</div>
+
+<div th:fragment="number">
+    <th:block th:replace="~{forms::number-base('', ${genericForm.getFieldName(field)}, ${field.getLabel()}, ${field.getPlaceholder()},
+        !${genericForm.canWriteField(field)}, !${genericForm.canWriteField(field)}, ${field.getAdditionalCss()}, '0.1','0')}" />
+</div>
+
+<div th:fragment="textarea">
+    <th:block th:replace="~{forms::textarea-base('', ${genericForm.getFieldName(field)}, ${field.getLabel()}, ${field.getTooltip()}, ${field.getPlaceholder()},
+        !${genericForm.canWriteField(field)}, !${genericForm.canWriteField(field)}, ${field.getAdditionalCss()})}" />
+</div>
+
+<div th:fragment="timepicker">
+    <th:block th:replace="~{forms::timepicker-readonly(${genericForm.getFieldName(field)}, ${field.getLabel()}, ${field.getPlaceholder()}, ${field.getTooltip()},
+        ${field.getAdditionalCss()}, !${genericForm.canWriteField(field)})}" />
+</div>
+
+<div th:fragment="date">
+    <th:block th:replace="~{forms::datepicker-readonly('', ${genericForm.getFieldName(field)}, ${field.getLabel()}, ${field.getTooltip()},
+        !${genericForm.canWriteField(field)}, ${field.getAdditionalCss()})}" />
+</div>
+
+<div th:fragment="datetime">
+    <th:block th:replace="~{forms::datetimepicker-readonly('', ${genericForm.getFieldName(field)}, ${field.getLabel()}, ${field.getTooltip()},
+        !${genericForm.canWriteField(field)}, ${field.getAdditionalCss()})}" />
+</div>
+
+<div th:fragment="hidden">
+    <th:block th:replace="~{forms::hidden-base('', ${genericForm.getFieldName(field)}, ${genericForm.getProvidedValue(field)})}" />
+</div>
+
+<div th:fragment="code-html">
+    <th:block th:if="${field.autocomplete == true}">
+        <th:block th:replace="~{::autocomplete}"/>
+        <th:block th:replace="~{forms::textarea-code-with-autocomplete-with-class(${genericFormName + '-' + genericForm.hashCode()}, '', ${genericForm.getFieldName(field)},
+            ${field.getLabel()}, ${field.getTooltip()}, ${field.getPlaceholder()}, 'htmlmixed', ${field.getAdditionalCss()}, ${genericForm.canWriteField(field)}, ${field.autocomplete})}"/>
+    </th:block>
+    <th:block th:unless="${field.autocomplete == true}">
+        <th:block th:replace="~{forms::textarea-code-with-class(${genericFormName + '-' + genericForm.hashCode()}, '', ${genericForm.getFieldName(field)}, ${field.getLabel()},
+            ${field.getTooltip()}, ${field.getPlaceholder()}, 'htmlmixed', ${field.getAdditionalCss()}, ${genericForm.canWriteField(field)})}"/>
+    </th:block>
+</div>
+
+<div th:fragment="code-css">
+    <th:block th:if="${field.autocomplete == true}">
+        <th:block th:replace="~{::autocomplete}"/>
+        <th:block th:replace="~{forms::textarea-code-with-autocomplete-with-class(${genericFormName + '-' + genericForm.hashCode()}, '', ${genericForm.getFieldName(field)},
+            ${field.getLabel()}, ${field.getTooltip()}, ${field.getPlaceholder()}, 'css', ${field.getAdditionalCss()}, ${genericForm.canWriteField(field)}, ${field.autocomplete})}"/>
+    </th:block>
+    <th:block th:unless="${field.autocomplete == true}">
+        <th:block th:replace="~{forms::textarea-code-with-class(${genericFormName + '-' + genericForm.hashCode()}, '', ${genericForm.getFieldName(field)}, ${field.getLabel()},
+            ${field.getTooltip()}, ${field.getPlaceholder()}, 'css', ${field.getAdditionalCss()}, ${genericForm.canWriteField(field)})}"/>
+    </th:block>
+</div>
+
+<div th:fragment="code-js">
+    <th:block th:if="${field.autocomplete == true}">
+        <th:block th:replace="~{::autocomplete}"/>
+        <th:block th:replace="~{forms::textarea-code-with-autocomplete-with-class(${genericFormName + '-' + genericForm.hashCode()}, '', ${genericForm.getFieldName(field)},
+            ${field.getLabel()}, ${field.getTooltip()}, ${field.getPlaceholder()}, 'javascript', ${field.getAdditionalCss()}, ${genericForm.canWriteField(field)}, ${field.autocomplete})}"/>
+    </th:block>
+    <th:block th:unless="${field.autocomplete == true}">
+        <th:block th:replace="~{forms::textarea-code-with-class(${genericFormName + '-' + genericForm.hashCode()}, '', ${genericForm.getFieldName(field)}, ${field.getLabel()},
+            ${field.getTooltip()}, ${field.getPlaceholder()}, 'javascript', ${field.getAdditionalCss()}, ${genericForm.canWriteField(field)})}"/>
+    </th:block>
+</div>
+
+<th:block th:fragment="autocomplete">
+    <th:block th:replace="forms::code-editor-with-autocomplete-prerequisites('__${field.autocomplete}__')"/>
+</th:block>
+
+<th:block th:fragment="dropdown">
+    <th:block th:if="!${field.multiselect}">
+        <th:block th:replace="~{forms::select-simple-datalist-with-disable-with-class-with-preselection('', ${genericForm.getFieldName(field)}, ${field.getLabel()}, ${field.getTooltip()},
+            ${field.datalistId}, ${field.allowNull}, !${genericForm.canWriteField(field)}, ${field.getAdditionalCss()}, ${field.preselectedValue}, ${field.searchEnabled})}"/>
+    </th:block>
+    <th:block th:if="${field.multiselect}">
+        <th:block th:replace="~{forms::multiselect-base('', ${genericForm.getFieldName(field)}, ${field.getLabel()}, ${field.getTooltip()}, ${field.datalistId}, ${field.getAdditionalCss()},
+            !${genericForm.canWriteField(field)} , false, '', ${field.preselectedValue})}"/>
+    </th:block>
+</th:block>
+
+<th:block th:fragment="checkbox">
+    <th:block th:if="${genericForm.isMapDto()}">
+        <th:block th:replace="~{forms::checkbox-base-value-with-class('', ${genericForm.getFieldName(field)}, ${genericForm.dto.get(field.getPlainName())}, ${field.getLabel()},
+            ${field.getTooltip()}, !${genericForm.canWriteField(field)}, ${field.getAdditionalCss()})}"/>
+    </th:block>
+    <th:block th:if="${!genericForm.isMapDto()}" >
+        <th:block th:replace="~{forms::checkbox-base-with-class('', ${genericForm.getFieldName(field)}, ${field.getLabel()}, ${field.getTooltip()}, !${genericForm.canWriteField(field)},
+            ${field.getAdditionalCss()})}"/>
+    </th:block>
+</th:block>
+
+<th:block th:fragment="checkbox-list">
+
+    <input th:replace="~{forms::checkbox-table('', ${fieldName}, ${fieldLabel}, ${fieldTooltip}, ${fieldPlaceholder}, ${field.datalistId}, ${additionalClass}, ${!canWrite}, false)}"/>
+</th:block>
+
+<th:block th:fragment="radio">
+    <th:block th:if="${field.datalistId != null}">
+        <th:block th:replace="~{forms::radiobutton-table-base('', ${genericForm.getFieldName(field)}, ${field.getLabel()}, ${field.getTooltip()}, '', ${field.datalistId},
+            ${field.getAdditionalCss()}, !${genericForm.canWriteField(field)}, true)}"/>
+    </th:block>
+</th:block>
+
+<th:block th:fragment="switch">
+    <th:block th:if="${field.datalistSupplier != null}" th:with="labels=${field.datalistSupplier.apply(genericForm, @secureEntityDictionaryRepository).values()}">
+        <div th:class="'form-group d-table ' + ${field.getAdditionalCss()}">
+            <div class="d-table-cell align-middle">
+                <div th:replace="~{forms::label-simple('align-text-top', ${labels[0]})}"></div>
+            </div>
+            <div class="custom-control custom-switch d-table-cell align-middle">
+                <input th:id="${genericForm.getFieldName(field)}" th:disabled="!${genericForm.canWriteField(field)}"  th:field="*{__${genericForm.getFieldName(field)}__}" type="checkbox"
+                       class="custom-control-input" th:value="${genericForm.getFieldName(field)}"
+                       th:ischecked="*{__${genericForm.getFieldName(field)}__}"/>
+                <div th:replace="~{forms::label-for-switch(${genericForm.getFieldName(field)}, ${labels[1]})}"></div>
+            </div>
+        </div>
+    </th:block>
+</th:block>
+
+<th:block th:fragment="color">
+    <th:block th:replace="~{forms::color-picker(${genericForm.getFieldName(field)}, ${field.getLabel()}, ${field.getTooltip()})}"/>
+</th:block>
+
+<th:block th:fragment="divider">
+    <div th:id="${genericForm.getFieldName(field)}" th:class="'text-sm font-weight-bold mb-1 ' + ${field.getAdditionalCss()}"
+         th:classappend="${genericForm.getFieldIndex(field) > 0 ? 'mt-3' : ''}" th:text="${field.getLabel()}"  th:style="${field.style}"></div>
+</th:block>
+
+<th:block th:fragment="simple-div">
+    <div th:id="${genericForm.getFieldName(field)}" th:class="${field.getAdditionalCss()}" th:text="*{__${genericForm.getFieldName(field)}__}" th:style="${field.style}"></div>
+</th:block>
+
+<th:block th:fragment="recaptcha">
+    <th:block th:replace="~{forms::recaptcha(${genericForm.getFieldName(field)}, ${field.getLabel()}, ${genericForm.frontendMappingDefinition.siteKey})}"/>
+</th:block>
+
+<th:block th:fragment="caret-down">
+    <div>
+        <a th:id="${genericForm.getFieldName(field)}" th:disabled="!${genericForm.canWriteField(field)}" th:class="${field.getAdditionalCss()}" th:href="'#'">
+            <span th:text="${field.getLabel()}">missing label</span>
+            <span class="icon"><i class="fas fa-caret-down"></i></span>
+        </a>
+    </div>
+</th:block>
+
+<th:block th:fragment="map">
+    <th:block th:replace="~{forms::simple-map('', ${genericForm.getFieldName(field)}, ${genericForm.getProvidedValue(field)}, ${field.getLabel()},
+        ${field.getTooltip()}, ${field.placeholderKey}, false, false, '')}"/>
+</th:block>
+
+<th:block th:fragment="many-to-one">
+    <th:block th:replace="~{forms::select-simple-datalist-with-disable-with-class('', ${genericForm.getFieldName(field)}, ${field.getLabel()},
+        ${field.getTooltip()}, ${field.datalistId}, ${field.allowNull}, !${genericForm.canWriteField(field)}, ${field.getAdditionalCss()}, ${field.searchEnabled})}"/>
+</th:block>
+
+<th:block th:fragment="one-to-many">
+    <div th:class="'form-group ' + ${field.getAdditionalCss()}">
+        <div th:replace="~{forms::label-simple-with-name-and-tooltip('', ${genericForm.getFieldName(field)}, ${field.getLabel()}, ${field.getTooltip()})}"></div>
+        <div th:class="'form-control ' + (!*{__${genericForm.getFieldName(field)}__} ? '' : 'auto')">
+            <ul class="one-to-many mb-0">
+                <li th:each="related : *{__${genericForm.getFieldName(field)}__}">
+                    <a th:href="${#strings.endsWith(currentUri,'/settings') ? @url.form(related.organizationId, field.referencedEntityKey, related.id)
+                                        : @url.view(related.organizationId, field.referencedEntityKey, related.id)}" target="_blank">
+                        <th:block th:text="${@namehelper.toEntityClassName(field.referencedEntityKey) + ' ' + related.id}"/>
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </div>
+</th:block>
+
+<th:block th:fragment="image">
+    <th:block th:replace="~{forms::file-gallery('', ${genericForm.getFieldName(field)}, ${field.getLabel()},
+        ${field.getTooltip()}, ${field.getPlaceholder()}, ${field.datalistId}, 'table-compact ' + ${field.getAdditionalCss()}, !${genericForm.canWriteField(field)},
+        ${field.multiselect}, true, '.jpg,.jpeg,.png')}"/>
+</th:block>
+
+<th:block th:fragment="file">
+    <th:block th:replace="~{forms::file-gallery('', ${genericForm.getFieldName(field)}, ${field.getLabel()},
+        ${field.getTooltip()}, ${field.getPlaceholder()}, ${field.datalistId}, 'table-compact ' + ${field.getAdditionalCss()}, !${genericForm.canWriteField(field)},
+        ${field.multiselect}, true, ${field.contentType})}"/>
+</th:block>
+
+<th:block th:fragment="debug" th:with="debugFieldArea=${'debug-table-field-' + field.getPlainName()}">
+    <style>
+        .debug-table-hidden {
+            display: none;
+        }
+        table.debug-table {
+            width: 100%;
+            font-size: 0.6em;
+            margin-bottom: 3px;
+        }
+        table.debug-table td {
+            word-break: break-all;
+            border-left: 0px !important;
+        }
+        table.debug-table th {
+            word-break: break-all;
+            border-right: 0px !important;
+            /*text-align: right;*/
+        }
+    </style>
+    <div th:id="${debugFieldArea}">
+    <table class="debug-table">
+    <tr>
+        <th><span class="debug-table-expand" th:attr="onclick=|${ '$(''#' + debugFieldArea + ' .debug-table-hidden'').toggle()'}" >▼</span> field Name</th><td th:text="${genericForm.getFieldName(field)}"></td>
+        <th>canRead</th><td th:text="${genericForm.canReadField(field)}"></td>
+        <th>value</th><td th:text="*{__${genericForm.getFieldName(field)}__}"></td>
+        <th>fragment Name</th><td th:text="${field.fragmentName}"></td>
+        <th>field Type Enum</th><td th:text="${genericForm.getFieldType( field )}"></td>
+        <th>field Type</th><td th:text="${fieldTypeEnum.name()}"></td>
+        <th>can Change Org</th><td th:text="${@auth.hasGlobalPrivilege('canChangeEntityOrganization')}"></td>
+        <th>datalist Supplier</th><td th:text="${field.datalistSupplier != null}"></td>
+        <th>key</th><td th:text="${field.key}"></td>
+    </tr><tr class="debug-table-hidden">
+        <th>plain Field Name</th><td th:text="${field.getPlainName()}"></td>
+        <th>canWrite</th><td th:text="${genericForm.canWriteField(field)}"></td>
+        <th>read Privilege</th><td th:text="${field.readPrivilege}"></td>
+        <th>write Privilege</th><td th:text="${field.writePrivilege}"></td>
+        <th>can Read Check</th><td th:text="${field.canReadCheck != null? 'true' : ''}"></td>
+        <th>can Write Check</th><td th:text="${field.canWriteCheck != null? 'true' : ''}"></td>
+        <th>strict Write Access</th><td th:text="${field.strictWriteAccess}"></td>
+        <th>strict Read Access</th><td th:text="${field.strictReadAccess}"></td>
+        <th>label Key</th><td th:text="${field.labelKey}"></td>
+    </tr><tr class="debug-table-hidden">
+        <th>fieldPlaceholder</th><td th:text="${field.getPlaceholder()}"></td>
+        <th>additionalClass</th><td th:text="${field.getAdditionalCss()}"></td>
+        <th>dto To Entity Value Converter</th><td th:text="${field.dtoToEntityValueConverter}"></td>
+        <th>provided Value</th><td th:text="${genericForm.getProvidedValue(field)}"></td>
+        <th>preselected Value</th><td th:text="${field.preselectedValue}"></td>
+        <th>form Based Datalist Supplier</th><td th:text="${field.formBasedDatalistSupplier}"></td>
+        <th>autocomplete</th><td th:text="${field.autocomplete}"></td>
+        <th>allow Null</th><td th:text="${field.allowNull}"></td>
+        <th>placeholder Key</th><td th:text="${field.placeholderKey}"></td>
+    </tr><tr class="debug-table-hidden">
+        <th>datalist Id</th><td th:text="${field.datalistId}"></td>
+        <th>content Type</th><td th:text="${field.contentType}"></td>
+        <th>entity To Dto Value Converter</th><td th:text="${field.entityToDtoValueConverter}"></td>
+        <th>rowCount</th><td th:text="${genericFormGridIndexer != null ? (field.appendToPreviousRow || (field.sectionWrapped && #strings.endsWith(field.sectionCssIdentifier, '-div')) ? genericFormGridIndexer.get() : genericFormGridIndexer.increment()) : iter.count}"></td>
+        <th>action Privilege</th><td th:text="${field.actionPrivilege}"></td>
+        <th>action Url</th><td th:text="${field.actionUrl}"></td>
+        <th>action Label Key</th><td th:text="${field.actionLabelKey}"></td>
+        <th>non Dto</th><td th:text="${field.nonDto}"></td>
+        <th>tooltip Key</th><td th:text="${field.tooltipKey}"></td>
+    </tr><tr class="debug-table-hidden">
+        <th>sql Formula</th><td th:text="${field.sqlFormula}"></td>
+        <th>referenced Entity Key</th><td th:text="${field.referencedEntityKey}"></td>
+        <th>url</th><td th:text="${field.url}"></td>
+        <th>search Enabled</th><td th:text="${field.searchEnabled}"></td>
+        <th>warning</th><td th:text="${field.warning}"></td>
+        <th>warning Message</th><td th:text="${field.warningMessage}"></td>
+        <th>section Wrapper</th><td th:text="${field.sectionWrapper}"></td>
+        <th>section Wrapped</th><td th:text="${field.sectionWrapped}"></td>
+        <th>warning Key</th><td th:text="${field.warningKey}"></td>
+    </tr><tr class="debug-table-hidden">
+        <th>section Css Identifier</th><td th:text="${field.sectionCssIdentifier}"></td>
+        <th>multiselect</th><td th:text="${field.multiselect}"></td>
+        <th>column</th><td th:text="${field.column}"></td>
+        <th>width</th><td th:text="${field.width}"></td>
+        <th>append To Previous Row</th><td th:text="${field.appendToPreviousRow}"></td>
+        <th>style</th><td th:text="${field.style}"></td>
+        <th>mapped By Field Name</th><td th:text="${field.mappedByFieldName}"></td>
+        <th>description Source</th><td th:text="${field.descriptionSource}"></td>
+        <th>alert Key</th><td th:text="${field.alertKey}"></td>
+    </tr><tr class="debug-table-hidden">
+        <th>fieldLabel</th><td th:text="${field.getLabel()}"></td>
+        <th>fieldTooltip</th><td colspan="13" th:text="${field.getTooltip()}"></td>
+        <th>description Key</th><td th:text="${field.descriptionKey}"></td>
+    </tr>
+    </table>
+
+    <table th:if="${field.datalistSupplier != null AND field.datalistId != null}" th:inline="javascript" class="debug-table debug-table-hidden">
+        <tr><th>Datalist Supplier</th></tr>
+        <tr><td>
+        commonDictionaries[ [[${field.datalistId}]] ] = [( ${ @json.to(field.datalistSupplier.apply(genericForm, @secureEntityDictionaryRepository)) } )];
+        </td></tr>
+    </table>
+
+    <table th:if="${field.valueSupplier != null}" th:inline="javascript" class="debug-table debug-table-hidden">
+        <tr><th>Value Supplier</th></tr>
+        <tr><td>
+        [( ${ @json.to(field.valueSupplier.apply(genericForm) } )];
+        </td></tr>
+    </table>
+    </div>
+</th:block>
+
+</body>
+</html>

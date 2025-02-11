@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2016-2023, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
+Copyright (c) 2016-2024, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated 
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation 
@@ -31,10 +31,7 @@ import com.openkoda.core.service.*;
 import com.openkoda.core.service.email.EmailConstructor;
 import com.openkoda.core.service.email.EmailSender;
 import com.openkoda.core.service.email.EmailService;
-import com.openkoda.core.service.event.ApplicationEventService;
-import com.openkoda.core.service.event.ClusterEventSenderService;
-import com.openkoda.core.service.event.EventListenerService;
-import com.openkoda.core.service.event.SchedulerService;
+import com.openkoda.core.service.event.*;
 import com.openkoda.core.service.form.FormService;
 import com.openkoda.core.service.module.ModuleService;
 import com.openkoda.core.service.pdf.PdfConstructor;
@@ -44,6 +41,7 @@ import com.openkoda.service.captcha.CaptchaService;
 import com.openkoda.service.csv.CsvService;
 import com.openkoda.service.dynamicentity.DynamicEntityRegistrationService;
 import com.openkoda.service.dynamicentity.DynamicEntityService;
+import com.openkoda.service.export.ClasspathComponentImportService;
 import com.openkoda.service.export.ComponentExportService;
 import com.openkoda.service.export.ZipComponentImportService;
 import com.openkoda.service.notification.NotificationService;
@@ -81,6 +79,7 @@ public class Services {
     @Inject public ZipService zipService;
     @Inject public RunAsService runAs;
     @Inject public EventListenerService eventListener;
+    @Inject public CustomEventService customEventService;
     @Inject public SessionService sessionService;
     @Inject public SchedulerService scheduler;
     @Inject public EmailService emailService;
@@ -104,6 +103,7 @@ public class Services {
     @Inject public CustomisationService customisation;
     @Inject public FormService form;
     @Inject public ComponentExportService componentExport;
+    @Inject public ClasspathComponentImportService componentImport;
     @Inject public ZipComponentImportService zipComponentImport;
     @Inject public DatabaseValidationService databaseValidation;
     @Inject public DynamicEntityRegistrationService dynamicEntityRegistration;

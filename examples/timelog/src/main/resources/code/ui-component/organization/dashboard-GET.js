@@ -1,5 +1,5 @@
 flow
-.thenSet("timelogs", a => a.services.data.getRepository('timelog').findBy( (root, query, cb) => {
+.thenSet("timelogs", a => a.services.data.getRepository('timelog').search( (root, query, cb) => {
     let now = a.services.util.dateNow();
     let from = now.withDayOfMonth(1);
 	query.orderBy(

@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2016-2023, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
+Copyright (c) 2016-2024, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation
@@ -32,8 +32,7 @@ import org.apache.commons.lang.StringUtils;
 
 import java.util.Map;
 
-import static com.openkoda.controller.common.URLConstants.FRONTENDRESOURCEREGEX;
-import static com.openkoda.controller.common.URLConstants.ORGANIZATION;
+import static com.openkoda.controller.common.URLConstants.*;
 import static com.openkoda.core.form.FrontendMappingDefinition.createFrontendMappingDefinition;
 import static com.openkoda.core.form.Validator.notBlank;
 import static com.openkoda.model.Privilege.*;
@@ -63,10 +62,12 @@ public interface FrontendMappingDefinitions extends HasSecurityRules, TemplateFo
     String INVITE_USER_FORM_NAME = "inviteUserForm";
     String TABLE_COMPACT_CSS = "table-compact ";
     String EMAIL_CONFIG_FORM = "emailConfigForm";
+    String DOCUMENT = "documentId";
+    String DOCUMENTS = "documents";
 
     FrontendMappingDefinition roleForm = createFrontendMappingDefinition(ROLE_FORM, canReadBackend, canManageBackend,
         a -> a  .text(NAME_)
-                .dropdown(TYPE_, ROLE_TYPES_)
+                .dropdown(TYPE_).datalistValues(ROLE_TYPES_).enabled((c, entityId) -> entityId == null || entityId.getId() == null || entityId.getId() == 0)
                 .checkboxListGrouped(PRIVILEGES_, "privilegesGrouped").additionalCss(TABLE_COMPACT_CSS)
                 );
     
@@ -119,8 +120,8 @@ public interface FrontendMappingDefinitions extends HasSecurityRules, TemplateFo
 //                            (u, e) -> e != null && HybridMultiTenantConnectionProvider.isMultitenancy() && u.hasGlobalPrivilege(canAccessGlobalSettings))
                     .image(LOGO_ID)
                     .checkbox(PERSONALIZE_DASHBOARD)
-                    .colorPicker(MAIN_BRAND_COLOR)
-                    .colorPicker(SECOND_BRAND_COLOR)
+                    .color(MAIN_BRAND_COLOR)
+                    .color(SECOND_BRAND_COLOR)
     );
 
     FrontendMappingDefinition emailConfigForm = createFrontendMappingDefinition(EMAIL_CONFIG_FORM, canReadBackend, canManageBackend,
@@ -158,20 +159,20 @@ public interface FrontendMappingDefinitions extends HasSecurityRules, TemplateFo
     FrontendMappingDefinition frontendResourceForm = createFrontendMappingDefinition(FRONTEND_RESOURCE_FORM, readFrontendResource, manageFrontendResource,
             a -> a  .text(NAME_)
                         .validate(v -> v.matches(FRONTENDRESOURCEREGEX) ? null : "not.matching.name")
-                    .organizationSelect(ORGANIZATION_ID_)
-                    .dropdown(REQUIRED_PRIVILEGE_, PRIVILEGES_, true)
-                    .sectionWithDropdown(TYPE_, FRONTEND_RESOURCE_TYPE_)
-                        //.valueType(FrontendResource.Type.class)
+                    .sectionWithDropdown(TYPE_, FRONTEND_RESOURCE_TYPE_).withPreselectedValue(FrontendResource.Type.HTML.name())
                         .additionalCss("frontendResourceType").validate(notBlank())
                     .checkbox(INCLUDE_IN_SITEMAP_)
                     .checkbox(EMBEDDABLE_)
                     .datalist(ACCESS_LEVELS, d -> d.enumDictionary(FrontendResource.AccessLevel.values()))
-                    .dropdown(ACCESS_LEVEL, ACCESS_LEVELS)
+                    .dropdown(ACCESS_LEVEL, ACCESS_LEVELS).withPreselectedValue(FrontendResource.AccessLevel.GLOBAL.name()).validate(notBlank())
                     .customFieldType(DRAFT_CONTENT_,  f -> FrontendResourceForm.getCodeType(((ReflectionBasedEntityForm)f).dto.get(TYPE_)))
                     .valueSupplier(f -> {
                         FrontendResource ce = (FrontendResource) ((ReflectionBasedEntityForm) f).entity;
                         return ce == null ? "" : (ce.isDraft() ? ce.getDraftContent() : ce.getContent());
                     })
+                    .sectionWithLink("advanced").additionalCss("advancedConfiguration")
+                    .organizationSelect(ORGANIZATION_ID_).additionalCss("advancedConfiguration")
+                    .dropdown(REQUIRED_PRIVILEGE_, PRIVILEGES_, true).additionalCss("advancedConfiguration")
                     .validateForm((ReflectionBasedEntityForm f) ->
                         (f.dto.get(TYPE_).toString().equals(FrontendResource.Type.CSS.name()) && !f.dto.get(NAME_).toString().endsWith(FrontendResource.Type.CSS.getExtension())) ||
                         (f.dto.get(NAME_).toString().endsWith(FrontendResource.Type.CSS.getExtension()) && !f.dto.get(TYPE_).toString().equals(FrontendResource.Type.CSS.name())) ||
@@ -185,6 +186,8 @@ public interface FrontendMappingDefinitions extends HasSecurityRules, TemplateFo
                     .text(NAME_).validate(v -> StringUtils.isNotEmpty(v) ? null : "not.empty")
                     .hidden(QUERY)
     );
+
+
 
     FrontendMappingDefinition frontendResourcePageForm = createFrontendMappingDefinition(FRONTEND_RESOURCE_PAGE_FORM, readFrontendResource, manageFrontendResource,
             a -> a
@@ -322,5 +325,12 @@ public interface FrontendMappingDefinitions extends HasSecurityRules, TemplateFo
     FrontendMappingDefinition organizationsApi = createFrontendMappingDefinition(ORGANIZATION, readOrgData, manageOrgData,
             a -> a.hidden(ID_)
                     .text(NAME_)
+    );
+
+    FrontendMappingDefinition businessParametersForm = createFrontendMappingDefinition(BUSINESS_PARAMETER, readOrgData, manageOrgData,
+            a -> a.text(NAME_).required()
+                    .text(VALUE_).required().validate(v -> v.length() <= 1000 ? null : "too.long")
+                    .text(DESCRIPTION).validate(v -> v.length() <= 1000 ? null : "too.long")
+                    .text(CATEGORY)
     );
 }

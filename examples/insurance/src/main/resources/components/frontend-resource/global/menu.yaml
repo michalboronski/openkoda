@@ -1,0 +1,12 @@
+!!com.openkoda.service.export.dto.FrontendResourceConversionDto
+"accessLevel": "GLOBAL"
+"content": "templates/frontend-resource/global/menu.html"
+"controllerEndpoints": [
+  ]
+"includeInSitemap": !!bool "false"
+"module": "core"
+"name": "menu"
+"organizationId": !!null "null"
+"requiredPrivilege": !!null "null"
+"resourceType": "RESOURCE"
+"type": "HTML"

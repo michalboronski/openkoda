@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2016-2023, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
+Copyright (c) 2016-2024, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation
@@ -27,7 +27,9 @@ import com.openkoda.core.flow.PageModelMap;
 import com.openkoda.core.helper.ReadableCode;
 import com.openkoda.core.tracker.LoggingComponentWithRequestId;
 import com.openkoda.core.tracker.RequestIdHolder;
+import jakarta.servlet.RequestDispatcher;
 import jakarta.servlet.http.HttpServletRequest;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.servlet.error.ErrorController;
 import org.springframework.http.HttpStatus;
@@ -42,6 +44,7 @@ import java.time.LocalDateTime;
 import java.util.*;
 
 import static com.openkoda.controller.common.PageAttributes.*;
+import static com.openkoda.core.service.FrontendResourceService.frontendResourceTemplateNamePrefix;
 
 @Controller
 public class ErrorControllerImpl implements ErrorController, LoggingComponentWithRequestId, URLConstants, ReadableCode {
@@ -54,7 +57,7 @@ public class ErrorControllerImpl implements ErrorController, LoggingComponentWit
     @Value("${user.agent.excluded.from.error.log:}")
     String userAgentExcludedFromErrorLog;
 
-    @RequestMapping("/error")
+    @RequestMapping({frontendResourceTemplateNamePrefix + "/error", "/error"})
     @ResponseBody
     public Object handleError(
             @RequestParam(name = "requestId", required = false) String reqId,
@@ -64,8 +67,15 @@ public class ErrorControllerImpl implements ErrorController, LoggingComponentWit
         PageModelMap model = new PageModelMap();
         Optional<String> requestUri = getErrorRequestUri(request);
         Optional<String> requestErrorMessage = getErrorMessage(request);
+        Optional<Throwable> requestCause = getErrorCause(request);
         model.put(errorMessage, requestErrorMessage.orElse(null));
         model.put(errorHttpStatus, responseStatus);
+        if(requestCause.isPresent()) {
+            model.put(errorCause, requestCause.get().getMessage());
+            Optional<Throwable> requestDetailedCause = getDetailedErrorCause(requestCause.get());
+            requestDetailedCause.ifPresent(throwable -> model.put(errorMessageDetails, throwable.getMessage()));
+
+        }
 
         if (reqId == null) {
             reqId = RequestIdHolder.getId();
@@ -89,16 +99,40 @@ public class ErrorControllerImpl implements ErrorController, LoggingComponentWit
         if (getErrorRequestUri(request).map( a -> a.startsWith(_API) ).orElse(false) ) {
             return ResponseEntity.status(responseStatus).body(model);
         }
+        if (StringUtils.isNotEmpty(model.get(errorMessage))) {
+            error("{}", model.get(errorMessage));
+        }
+        if (StringUtils.isNotEmpty(model.get(errorCause))) {
+            error("{}", model.get(errorCause));
+        }
+        if (StringUtils.isNotEmpty(model.get(errorMessageDetails))) {
+            error("{}", model.get(errorMessageDetails));
+        }
         model.put(requestId, reqId);
         return new ModelAndView("frontend-resource/error", model, responseStatus);
     }
 
     private Optional<String> getErrorRequestUri(HttpServletRequest request) {
-        return Optional.ofNullable((String) request.getAttribute("jakarta.servlet.error.request_uri"));
+        return Optional.ofNullable((String) request.getAttribute(RequestDispatcher.ERROR_REQUEST_URI));
     }
 
     private Optional<String> getErrorMessage(HttpServletRequest request) {
-        return Optional.ofNullable((String) request.getAttribute("jakarta.servlet.error.message"));
+        return Optional.ofNullable((String) request.getAttribute(RequestDispatcher.ERROR_MESSAGE));
+    }
+
+    private Optional<Throwable> getErrorCause(HttpServletRequest request) {
+        Throwable error = (Throwable) request.getAttribute(RequestDispatcher.ERROR_EXCEPTION);
+        String cause = null;
+        if(error != null && error.getCause() != null) {
+            return Optional.ofNullable(error.getCause());
+        }
+        return Optional.ofNullable(error);
+    }
+    private Optional<Throwable> getDetailedErrorCause(Throwable error) {
+        if(error != null && error.getCause() != null) {
+            return Optional.ofNullable(error.getCause());
+        }
+        return Optional.empty();
     }
 
     private Integer getErrorStatusCode(HttpServletRequest request) {

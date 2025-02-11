@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<body>
+    <th:block th:fragment="ai(title,promptWebEndpoint,handlerJs)">
+        <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+        <style>
+            .chat-message {
+                padding: 0.5rem 0.75rem;
+                border-radius: .5rem;
+                margin: 0.5rem 0;
+            }
+            .gpt-message {
+                padding: 0 0.75rem;
+                display: flex;
+                flex-direction: row;
+                align-items: baseline;
+            }
+            .gpt-content {
+                display: flex;
+                flex-direction: column;
+            }
+            .user-message {
+                background-color: #dddfeb;
+                margin-left: auto;
+            }
+
+            .chat-messages {
+                margin: 0.5rem 0;
+                overflow-y: auto;
+                height: 40vh;
+                display: flex;
+                flex-direction: column;
+            }
+
+            .loading-hidden {
+                display: none;
+            }
+
+            .loading-showed {
+                display: block;
+            }
+
+        </style>
+        <div class="card shadow">
+            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                <h6 th:if="${title != ''}" class="m-0 font-weight-bold" th:text="${title}">AI</h6>
+
+            </div>
+            <div class="card-body">
+                <div id="chat-holder-content" class="chat-messages"></div>
+                <div class="form-group">
+                    <textarea class="form-control" rows="5" name="prompt" th:placeholder="${promptTextPlaceholder ?: 'Prompt text here'}" id="chat-input"></textarea>
+                </div>
+                <form th:action="${@url.reportPrompt(organizationEntityId)}" method="post" id="chat-form">
+                    <th:block th:replace="~{forms::csrf}"/>
+                    <input id="promptWebEndpoint" type="hidden" name="promptWebEndpoint" th:value="${promptWebEndpoint}"/>
+                    <input id="conversationId" type="hidden" name="conversationId"/>
+                    <input id="channelId" type="hidden" name="channelId"/>
+                    <input id="model" type="hidden" name="model" th:value="${model}"/>
+                    <input id="temperature" type="hidden" name="temperature" th:value="${temperature}"/>
+                    <input id="prompt" type="hidden" name="prompt"/>
+
+                    <button onclick="app.sendButtonClicked()" type="button" class="btn btn-primary btn-submit" >Send</button>
+                </form>
+            </div>
+        </div>
+        <div id="loading" class="loading-hidden">
+            <th:block th:replace="~{snippets::loading}"/>
+        </div>
+        <script th:inline="javascript">
+            let parseResponseTextJs = /*[[${ parseResponseTextJs }]]*/ '';
+            let handlerJs = /*[[${ handlerJs }]]*/ '';
+            let promptWebEndpoint = /*[[${ promptWebEndpoint }]]*/ '';
+            let conversationStart = /*[[${ conversationStart }]]*/ null;
+            var conversation = {
+                id: null
+            }
+
+            app.sendButtonClicked = function () {
+                app.handleGptResponse();
+            }
+
+            app.handleGptResponse = function () {
+                const chatInput = document.querySelector('#chat-input');
+                const userMessage = chatInput.value;
+                chatInput.value = '';
+                document.querySelector('#prompt').value = userMessage;
+                document.querySelector('#conversationId').value = conversation.id;
+                const newMessage = document.createElement('div');
+                const newContent = document.createTextNode(userMessage);
+                newMessage.appendChild(newContent);
+                newMessage.classList.add('chat-message');
+                newMessage.classList.add('user-message');
+                document.querySelector('#chat-holder-content').appendChild(newMessage);
+                chatInput.value = '';
+                let chatHolder = document.getElementById('chat-holder-content');
+                chatHolder.scrollTop = chatHolder.scrollHeight;
+                app.loading();
+                $.post($('#chat-form').attr('action'), $('#chat-form').serialize(), function (response) {
+                    if (!conversation.id) {
+                        let startMessage = typeof window[conversationStart] === 'function' ? window[conversationStart](conversation.id)
+                            : `New&nbsp;<a target="audit" href="/html/audit/all?audit_page=0&audit_size=20&audit_sort=createdOn%2CDESC&audit_search=${conversation.id}">conversation</a>&nbsp;started.`;
+                        conversation.id = response.conversationId;
+						const newMessage = document.createElement('div');
+                        newMessage.innerHTML = `<i class="fa-solid fa-exchange text-primary mr-2"></i>${startMessage}`;
+                        newMessage.classList.add('chat-message');
+                        newMessage.classList.add('gpt-message');
+                        document.querySelector('#chat-holder-content .user-message').after(newMessage);
+                    }
+                })
+            }
+
+            app.stringBetween = function (content, quotes, occurence) {
+                let startIndex = content.indexOf(quotes) + quotes.length;
+                let endIndex = content.indexOf(quotes, startIndex);
+                for (let k = 0; k < occurence; k++) {
+                    startIndex = content.indexOf(quotes, endIndex + quotes.length) + quotes.length;
+                    endIndex = content.indexOf(quotes, startIndex);
+                }
+                return content.substring(startIndex, endIndex);
+            }
+
+            app.extractResponseToCode = function (message) {
+                if(typeof conversation.id !== null){
+                    let bodyJson = JSON.parse(message.body);
+                    let conversationId = bodyJson.conversationId;
+                    if (conversation.id && conversationId !== conversation.id) {
+                        console.warn(`Received different conversation (${conversationId} != ${conversation.id}). Skipping.`);
+                        return;
+                    }
+                    let response = bodyJson.response;
+	                const newResponse = document.createElement('div');
+					if(typeof window[parseResponseTextJs] === 'function') {
+						response = window[parseResponseTextJs](response);
+                    }
+	                newResponse.innerHTML = `<i class="fa-solid fa-message text-primary mr-2"></i><div class="gpt-content">${response}</div>`;
+	                newResponse.classList.add('chat-message');
+	                newResponse.classList.add('gpt-message');
+	                document.querySelector('#chat-holder-content').appendChild(newResponse);
+
+					window[handlerJs](bodyJson);
+                    let chatHolder = document.getElementById('chat-holder-content');
+                    chatHolder.scrollTop = chatHolder.scrollHeight;
+                    app.loading();
+                }
+                else{
+                    setTimeout(app.extractResponseToCode(message), 250);
+                }
+            }
+
+            app.loading = function () {
+                const loading = document.querySelector('#loading');
+                if (loading.classList.contains('loading-hidden')) {
+                    loading.classList.remove('loading-hidden');
+                    loading.classList.add('loading-show');
+                } else {
+                    loading.classList.add('loading-hidden');
+                    loading.classList.remove('loading-show');
+                }
+            }
+
+            $(document).ready(function () {
+                let channelId = new Date().valueOf() + Math.floor(Math.random() * 10000);
+                document.querySelector('#channelId').value = channelId;
+                app.subscribeToChannel("/queue/" + promptWebEndpoint + "/" + channelId, app.extractResponseToCode);
+            });
+        </script>
+
+    </th:block>
+</body>
+</html>

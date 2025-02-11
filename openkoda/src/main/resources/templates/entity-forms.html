@@ -49,6 +49,12 @@
       th:replace="~{generic-forms::generic-form(${privilegeForm}, 'privilegeForm', '', #{template.forms.containsErrors}, 'alert-danger', 'Privilege Data', #{template.save}, false)}" />
 <form th:fragment="privilege-settings-form-success" th:replace="~{generic-forms::go-back( ${@url.allPrivileges()} )}"/>
 
+<form th:fragment="customevent-settings-form-new"
+      th:replace="~{generic-forms::generic-form(${createEventForm}, 'createEventForm', '', '', '', 'Custom Event', #{template.save}, true)}" />
+<form th:fragment="customevent-settings-form-error"
+      th:replace="~{generic-forms::generic-form(${createEventForm}, 'createEventForm', '', #{template.forms.containsErrors}, 'alert-danger', 'Custom Event', #{template.save}, false)}" />
+<form th:fragment="customevent-settings-form-success" th:replace="~{generic-forms::go-back( ${@url.allCustomEvents()} )}"/>
+
 <form th:fragment="frontend-resource-settings-form-new"
       th:replace="~{generic-forms::generic-form(${frontendResourceForm}, 'frontendResourceForm', '', '', '', '', #{template.save}, true)}" />
 <form th:fragment="frontend-resource-settings-form-error"

@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2016-2023, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
+Copyright (c) 2016-2024, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software
  and associated documentation files (the "Software"), to deal in the Software without restriction, 
@@ -47,6 +47,7 @@ import com.openkoda.repository.FrontendResourceRepository;
 import com.openkoda.uicomponent.JsFlowRunner;
 import jakarta.inject.Inject;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.core.io.InputStreamResource;
@@ -261,7 +262,8 @@ public class AbstractFrontendResourceController extends AbstractController imple
                                                  ControllerEndpoint.HttpMethod httpMethod,
                                                  boolean preview,
                                                  Map<String,String> requestParams,
-                                                 AbstractOrganizationRelatedEntityForm form) {
+                                                 AbstractOrganizationRelatedEntityForm form,
+                                                 HttpServletResponse response) {
         debug("[invokeFrontendResourceEntry] FrontendResourcePath: {}", frontendResourcePath);
         FrontendResourceRepository fr = repositories.unsecure.frontendResource;
         FrontendResource frontendResource = null;
@@ -293,7 +295,7 @@ public class AbstractFrontendResourceController extends AbstractController imple
                     httpMethod);
                 if(controllerEndpoint != null) {
                     return evaluateControllerEndpoint(organizationId, frontendResourcePath, subPath,
-                            mav, frontendResource, httpMethod, controllerEndpoint, preview, requestParams, form);
+                            mav, frontendResource, httpMethod, controllerEndpoint, preview, requestParams, form, response);
                 }
             }
         } else {
@@ -328,7 +330,8 @@ public class AbstractFrontendResourceController extends AbstractController imple
                                               ControllerEndpoint controllerEndpoint,
                                               boolean preview,
                                               Map<String,String> requestParams,
-                                              AbstractOrganizationRelatedEntityForm form) {
+                                              AbstractOrganizationRelatedEntityForm form,
+                                              HttpServletResponse response) {
         switch (controllerEndpoint.getResponseType()) {
             case HTML -> {
                 String scriptSourceFileName = deductScriptSourceFileName(controllerEndpoint);
@@ -345,6 +348,8 @@ public class AbstractFrontendResourceController extends AbstractController imple
                     mav.setViewName("generic-forms::reload");
                 } else if (pageModelMap.has(redirectUrl) && !isError) {
                     mav.setViewName("generic-forms::go-to(url='" + pageModelMap.get(redirectUrl) + "')");
+                } else if (pageModelMap.has(webEndpointHtmlView) && !isError) {
+                    mav.setViewName(pageModelMap.get(webEndpointHtmlView));
                 } else {
                     if (form == null) {
                         if (isError) {
@@ -359,6 +364,7 @@ public class AbstractFrontendResourceController extends AbstractController imple
                         }
                     }
                 }
+                setupHttpHeaders(controllerEndpoint, response);
                 return mav;
             }
             default -> {
@@ -468,6 +474,13 @@ public class AbstractFrontendResourceController extends AbstractController imple
             responseHeaders.add(httpHeader.getKey(), httpHeader.getValue());
         }
         return responseHeaders;
+    }
+
+    private void setupHttpHeaders(ControllerEndpoint controllerEndpoint, HttpServletResponse response) {
+        debug("[setupHttpHeaders]");
+        for (Map.Entry<String, String> httpHeader : controllerEndpoint.getHttpHeadersMap().entrySet()) {
+            response.setHeader(httpHeader.getKey(), httpHeader.getValue());
+        }
     }
 
     /**

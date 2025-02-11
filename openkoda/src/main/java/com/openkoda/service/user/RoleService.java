@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2016-2023, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
+Copyright (c) 2016-2024, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation
@@ -23,9 +23,15 @@ package com.openkoda.service.user;
 
 import com.openkoda.controller.ComponentProvider;
 import com.openkoda.core.security.HasSecurityRules;
-import com.openkoda.model.*;
+import com.openkoda.model.GlobalOrganizationRole;
+import com.openkoda.model.GlobalRole;
+import com.openkoda.model.OrganizationRole;
+import com.openkoda.model.PrivilegeBase;
+import com.openkoda.model.Role;
 import com.openkoda.service.user.BasicPrivilegeService.PrivilegeChangeEvent;
+
 import jakarta.inject.Inject;
+
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;

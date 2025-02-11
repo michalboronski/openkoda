@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2016-2023, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
+Copyright (c) 2016-2024, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software
  and associated documentation files (the "Software"), to deal in the Software without restriction, 
@@ -99,7 +99,7 @@ public interface LoggingComponentWithRequestId extends ReadableCode {
      */
     default String appendRequestId(String message, boolean appendAuditurl) {
         return appendAuditurl ? String.format("%s/html/audit/all?audit_search=%s: %s",
-                UrlHelper.getBaseUrlOrEmpty(), RequestIdHolder.getId(), message)
+                UrlHelper.getInstance().getBaseUrlOrEmpty(), RequestIdHolder.getId(), message)
                 : RequestIdHolder.getId() + ": " + message;
     }
 

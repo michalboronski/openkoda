@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2016-2023, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
+Copyright (c) 2016-2024, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation
@@ -30,6 +30,7 @@ import com.openkoda.core.tracker.LoggingComponentWithRequestId;
 import com.openkoda.model.User;
 import com.openkoda.repository.user.UserRepository;
 import com.openkoda.service.user.BasicPrivilegeService.PrivilegeChangeEvent;
+
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import org.apache.commons.lang3.StringUtils;
@@ -111,11 +112,12 @@ public class OrganizationUserDetailsService implements UserDetailsService, URLCo
         Set<String> globalRoles = new HashSet<>();
         Map<Long, Set<String>> organizationPrivileges = new HashMap<>();
         Map<Long, Set<String>> organizationRoles = new HashMap<>();
+        Map<Long, Set<Long>> organizationRoleIds = new HashMap<>();
         Map<Long, String> organizationNames = new LinkedHashMap<>();
         Long firstOrganizationId = null;
         
         for (Tuple t : info) {
-            Long userRoleId = t.v(Long.class, 0);
+            Long roleId = t.v(Long.class, 0);
             String roleName = t.v(String.class, 1);
             String privilegesString = t.v(String.class, 2);
             Long organizationId = t.v(Long.class, 3);
@@ -125,17 +127,12 @@ public class OrganizationUserDetailsService implements UserDetailsService, URLCo
                 globalPrivileges.addAll(PrivilegeHelper.fromJoinedStringToStringSet(privilegesString));
                 globalRoles.add(roleName);
             } else {
-                Set<String> roles = organizationRoles.get(organizationId);
-                if (roles == null) {
-                    roles = new HashSet<>();
-                    organizationRoles.put(organizationId, roles);
-                }
-                Set<String> privileges = organizationPrivileges.get(organizationId);
-                if (privileges == null) {
-                    privileges = new HashSet<>();
-                    organizationPrivileges.put(organizationId, privileges);
-                }
+                Set<String> roles = organizationRoles.computeIfAbsent(organizationId, k -> new HashSet<>());
+                Set<Long> roleIds = organizationRoleIds.computeIfAbsent(organizationId, k -> new HashSet<>());
+                Set<String> privileges = organizationPrivileges.computeIfAbsent(organizationId, k -> new HashSet<>());
+
                 roles.add(roleName);
+                roleIds.add(roleId);
                 privileges.addAll(PrivilegeHelper.fromJoinedStringToStringSet(privilegesString));
                 organizationNames.put(organizationId, organizationName);
 
@@ -156,15 +153,14 @@ public class OrganizationUserDetailsService implements UserDetailsService, URLCo
                     user.getLoginAndPassword() == null ? "" : user.getLoginAndPassword().getPassword(),
     
                     user.isEnabled(), true, true, true,
-                    authorities, globalPrivileges, globalRoles, organizationPrivileges, organizationRoles, user, organizationNames);
+                    authorities, globalPrivileges, globalRoles, organizationPrivileges, organizationRoles, organizationRoleIds, user, organizationNames);
             if(SecurityContextHolder.getContext().getAuthentication() != null && SecurityContextHolder.getContext().getAuthentication().getPrincipal() instanceof OrganizationUser) {
                 OrganizationUser principal = (OrganizationUser) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
                 newOrganizationUser.setAuthMethod(principal.getAuthMethod());
                 newOrganizationUser.setSpoofed(principal.isSpoofed());
             }
         } else {
-            organizationUser.resetPrivileges(globalPrivileges, globalRoles, organizationPrivileges, organizationRoles);
-
+            organizationUser.resetPrivileges(globalPrivileges, globalRoles, organizationPrivileges, organizationRoles, organizationRoleIds);
         }
 
         Locale userLocale = Locale.forLanguageTag(StringUtils.defaultIfBlank(user.getLanguage(), "en"));

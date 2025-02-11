@@ -1,0 +1,6 @@
+a => a.number("agentId")
+                    .text("firstName")
+                    .text("lastName")
+                    .text("contactNumber")
+                    .text("email")
+                    .number("commissionRate")

@@ -1,3 +1,24 @@
+/*
+MIT License
+
+Copyright (c) 2016-2024, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
+documentation files (the "Software"), to deal in the Software without restriction, including without limitation
+the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software,
+and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice
+shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR
+A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS
+OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR
+IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+*/
+
 package com.openkoda.service.openai;
 
 import com.openkoda.controller.ComponentProvider;
@@ -10,7 +31,7 @@ import com.openkoda.uicomponent.annotation.AiHint;
 import com.openkoda.uicomponent.annotation.Autocomplete;
 import com.openkoda.uicomponent.live.LiveComponentProvider;
 import jakarta.inject.Inject;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.hibernate.annotations.Formula;
@@ -113,7 +134,7 @@ public class ChatGPTPromptService extends ComponentProvider {
         Table[] annotationsByType = entityClass.getAnnotationsByType(Table.class);
         String tableName = annotationsByType.length > 0 ? annotationsByType[0].name() : entityKey;
         return tableName + " (" +
-                getEligibleFields(entityClass).stream().map(field -> toColumnName(field.getName())).collect(joining(",")) + ")\n" +
+                getDatabaseSchemaEligibleFields(entityClass).stream().map(field -> toColumnName(field.getName())).collect(joining(",")) + ")\n" +
                 getAllHints(entityClass) + "\n";
     }
     private String getDetectedMethodEntries(Class<SearchableEntity> entityClass){
@@ -156,10 +177,29 @@ public class ChatGPTPromptService extends ComponentProvider {
                 .filter(this::isEligible)
                 .collect(Collectors.toList());
     }
+
+    private List<Field> getDatabaseSchemaEligibleFields(Class<SearchableEntity> entityClass){
+        debug("[getEligibleFields]");
+        return stream(entityClass.getDeclaredFields())
+                .filter(this::isDatabaseSchemaEligible)
+                .collect(Collectors.toList());
+    }
+
     private boolean isEligible(Field field){
         return !Arrays.asList(excludedFields).contains(field.getName())
                 && !Modifier.isStatic(field.getModifiers());
     }
+
+    private boolean isDatabaseSchemaEligible(Field field){
+        return !Arrays.asList(excludedFields).contains(field.getName())
+                && !Modifier.isStatic(field.getModifiers())
+                && !field.isAnnotationPresent(OneToMany.class)
+                && !field.isAnnotationPresent(ManyToOne.class)
+                && !field.isAnnotationPresent(ManyToMany.class)
+                && !field.isAnnotationPresent(ElementCollection.class)
+                ;
+    }
+
     private void addSetterIfExists(Field field, Class<SearchableEntity> entityClass, List<Method> methods){
         try {
             Method m = entityClass.getMethod("set" + capitalize(field.getName()), field.getType());

@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2016-2023, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
+Copyright (c) 2016-2024, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation
@@ -26,7 +26,7 @@ import com.openkoda.controller.common.PageAttributes;
 import com.openkoda.core.helper.UserHelper;
 import com.openkoda.core.service.event.ApplicationEvent;
 import com.openkoda.dto.OrganizationDto;
-import com.openkoda.dto.user.BasicUser;
+import com.openkoda.dto.user.BasicUserDto;
 import com.openkoda.dto.user.UserRoleDto;
 import com.openkoda.integration.model.configuration.IntegrationModuleOrganizationConfiguration;
 import com.openkoda.model.PrivilegeBase;
@@ -120,12 +120,12 @@ public class ModuleService extends ComponentProvider implements PageAttributes {
     }
 
 
-    public boolean createConfigurationsForUser(BasicUser user) {
+    public boolean createConfigurationsForUser(BasicUserDto user) {
         debug("[createConfigurationsForUser] {}", user);
         return true;
     }
 
-    public boolean deleteConfigurationsForUser(BasicUser user) {
+    public boolean deleteConfigurationsForUser(BasicUserDto user) {
         debug("[deleteConfigurationsForUser] {}", user);
         return true;
     }

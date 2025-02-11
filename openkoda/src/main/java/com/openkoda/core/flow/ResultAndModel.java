@@ -21,7 +21,10 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 package com.openkoda.core.flow;
 
-import java.util.Map;
+import com.openkoda.core.flow.parameters.BusinessParametersMap;
+import com.openkoda.core.flow.parameters.RequestParametersMap;
+
+import java.util.List;
 
 /**
  * @author Arkadiusz Drysch (adrysch@stratoflow.com)
@@ -32,12 +35,17 @@ public class ResultAndModel<R, CP> {
     public final PageModelMap model;
     public final R result;
     public final CP services;
-    public final Map<String, Object> params;
-    protected ResultAndModel(PageModelMap model, R result, CP services, Map<String, Object> params) {
+    public final RequestParametersMap requestParameters;
+    public final BusinessParametersMap businessParameters;
+    public final List<String> arguments;
+
+    protected ResultAndModel(PageModelMap model, R result, CP services, RequestParametersMap requestParameters, BusinessParametersMap businessParameters, List<String> arguments) {
         this.result = result;
         this.model = model;
         this.services = services;
-        this.params = params;
+        this.requestParameters = requestParameters;
+        this.businessParameters = businessParameters;
+        this.arguments = arguments;
         objCount++;
     }
 

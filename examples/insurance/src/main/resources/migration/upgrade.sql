@@ -1,0 +1,12 @@
+ALTER TABLE agent ADD COLUMN IF NOT EXISTS agent_id numeric;
+ALTER TABLE agent ADD COLUMN IF NOT EXISTS last_name varchar(255);
+ALTER TABLE agent ADD COLUMN IF NOT EXISTS first_name varchar(255);
+ALTER TABLE agent ADD COLUMN IF NOT EXISTS commission_rate numeric;
+ALTER TABLE agent ADD COLUMN IF NOT EXISTS contact_number varchar(255);
+ALTER TABLE agent ADD COLUMN IF NOT EXISTS email varchar(255);
+ALTER TABLE beneficiary ADD COLUMN IF NOT EXISTS first_name varchar(255);
+ALTER TABLE beneficiary ADD COLUMN IF NOT EXISTS beneficiary_id numeric;
+ALTER TABLE beneficiary ADD COLUMN IF NOT EXISTS contact_number varchar(255);
+ALTER TABLE beneficiary ADD COLUMN IF NOT EXISTS policy_id bigint;
+ALTER TABLE beneficiary ADD COLUMN IF NOT EXISTS relationship varchar(255);
+ALTER TABLE beneficiary ADD COLUMN IF NOT EXISTS last_name varchar(255);

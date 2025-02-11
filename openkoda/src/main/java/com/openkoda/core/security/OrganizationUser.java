@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2016-2023, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
+Copyright (c) 2016-2024, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated 
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation 
@@ -41,6 +41,7 @@ public class OrganizationUser extends User implements OAuth2User, HasSecurityRul
     private Set<String> globalRoles;
     private Map<Long, Set<String>> organizationPrivileges;
     private Map<Long, Set<String>> organizationRoles;
+    private Map<Long, Set<Long>> organizationRoleIds;
     private final Map<Long, String> organizationNames;
     private final com.openkoda.model.User user;
     private final Long defaultOrganizationId;
@@ -58,40 +59,41 @@ public class OrganizationUser extends User implements OAuth2User, HasSecurityRul
     private static final String nonExistingPrivilege = " does not exist ";
 
 
-    public OrganizationUser(String username, String password, boolean enabled, boolean accountNonExpired, boolean credentialsNonExpired, boolean accountNonLocked, Collection<? extends GrantedAuthority> authorities, Set<String> globalPrivileges, Set<String> globalRoles, Map<Long, Set<String>> organizationPrivileges, Map<Long, Set<String>> organizationRoles, com.openkoda.model.User user, Map<Long, String> organizationNames) {
+    public OrganizationUser(String username, String password, boolean enabled, boolean accountNonExpired, boolean credentialsNonExpired, boolean accountNonLocked, Collection<? extends GrantedAuthority> authorities, Set<String> globalPrivileges, Set<String> globalRoles, Map<Long, Set<String>> organizationPrivileges, Map<Long, Set<String>> organizationRoles, Map<Long, Set<Long>> organizationRoleIds, com.openkoda.model.User user, Map<Long, String> organizationNames) {
         super(username, password, enabled, accountNonExpired, credentialsNonExpired, accountNonLocked, authorities);
 
         this.globalPrivileges = prepareImmutableSet(globalPrivileges, nonExistingPrivilege);
         this.globalRoles = prepareImmutableSet(globalRoles, null);
         this.organizationPrivileges = prepareImmutableSetsMap(organizationPrivileges, nonExistingPrivilege);
         this.organizationRoles = prepareImmutableSetsMap(organizationRoles, null);
+        this.organizationRoleIds = prepareImmutableSetsMap(organizationRoleIds, null);
         this.user = user;
         this.organizationNames = Collections.unmodifiableMap(organizationNames);
         this.isSpoofed = false;
         defaultOrganizationId = organizationNames.isEmpty() ? nonExistingOrganizationId : organizationNames.keySet().iterator().next();
     }
 
-    private Map<Long, Set<String>> prepareImmutableSetsMap(Map<Long, Set<String>> map, String additionalValue) {
+    private <T> Map<Long, Set<T>> prepareImmutableSetsMap(Map<Long, Set<T>> map, T additionalValue) {
         debug("[prepareImmutableSetsMap]");
-        Map<Long, Set<String>> result = new HashMap<>(map.size());
+        Map<Long, Set<T>> result = new HashMap<>(map.size());
 
-        for ( Map.Entry<Long, Set<String>> e : map.entrySet()) {
+        for ( Map.Entry<Long, Set<T>> e : map.entrySet()) {
             result.put(e.getKey(), prepareImmutableSet(e.getValue(), additionalValue));
         }
 
-        return new UnmodifiableMapWithRemove(result);
+        return new UnmodifiableMapWithRemove<>(result);
 
     }
 
-    private Set<String> prepareImmutableSet(Set<String> set, String additionalValue) {
+    private <T> Set<T> prepareImmutableSet(Set<T> set, T additionalValue) {
         debug("[prepareImmutableSet]");
         boolean noAdditional = (additionalValue == null);
-        if (noAdditional) { return new UnmodifiableSetWithRemove(set); }
+        if (noAdditional) { return new UnmodifiableSetWithRemove<>(set); }
 
-        Set<String> result = new HashSet(set.size() + 1);
+        Set<T> result = new HashSet<>(set.size() + 1);
         result.addAll(set);
         result.add(additionalValue);
-        return new UnmodifiableSetWithRemove(result);
+        return new UnmodifiableSetWithRemove<>(result);
     }
 
     public static Optional<OrganizationUser> getFromContext() {
@@ -203,6 +205,10 @@ public class OrganizationUser extends User implements OAuth2User, HasSecurityRul
         return globalRoles;
     }
 
+    public Set<Long> getGlobalRolesIds() {
+        return new HashSet<>();
+    }
+
     public void setGlobalRoles(Set<String> globalRoles) {
         this.globalRoles = globalRoles;
     }
@@ -219,8 +225,8 @@ public class OrganizationUser extends User implements OAuth2User, HasSecurityRul
         return organizationRoles;
     }
 
-    public void setOrganizationRoles(Map<Long, Set<String>> organizationRoles) {
-        this.organizationRoles = organizationRoles;
+    public Map<Long, Set<Long>> getOrganizationRoleIds() {
+        return organizationRoleIds;
     }
 
     public void setGlobalPrivileges(Set<String> globalPrivileges) {
@@ -251,9 +257,8 @@ public class OrganizationUser extends User implements OAuth2User, HasSecurityRul
             true,
             true,
             true,
-            Collections.emptySet(), Collections.singleton(" void privilege "), Collections.emptySet(), Collections
-            .emptyMap(),
-            Collections.emptyMap(), null, Collections.emptyMap());
+            Collections.emptySet(), Collections.singleton(" void privilege "),
+            Collections.emptySet(), Collections.emptyMap(), Collections.emptyMap(), Collections.emptyMap(),null, Collections.emptyMap());
 
 
     @Override
@@ -270,11 +275,12 @@ public class OrganizationUser extends User implements OAuth2User, HasSecurityRul
         this.oauth2User = oauth2User;
     }
     
-    public boolean resetPrivileges(Set<String> globalPrivileges, Set<String> globalRoles, Map<Long, Set<String>> organizationPrivileges, Map<Long, Set<String>> organizationRoles) {
+    public boolean resetPrivileges(Set<String> globalPrivileges, Set<String> globalRoles, Map<Long, Set<String>> organizationPrivileges, Map<Long, Set<String>> organizationRoles, Map<Long, Set<Long>> organizationRoleIds) {
         this.globalPrivileges = globalPrivileges;
         this.globalRoles = globalRoles;
         this.organizationPrivileges = organizationPrivileges;
         this.organizationRoles = organizationRoles;
+        this.organizationRoleIds = organizationRoleIds;
         return true;
     }
 }

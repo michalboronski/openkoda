@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2016-2023, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
+Copyright (c) 2016-2024, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation
@@ -22,6 +22,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 package com.openkoda.dto.file;
 
 import com.google.gson.annotations.Expose;
+import com.openkoda.core.helper.UrlHelper;
 import com.openkoda.dto.CanonicalObject;
 import com.openkoda.dto.OrganizationRelatedObject;
 
@@ -46,7 +47,7 @@ public class FileDto implements CanonicalObject, OrganizationRelatedObject{
 
     //TODO Rule 5.5: DTO should not have code
     private static String getUrlBase(Long id, Long organizationId) {
-        return organizationId == null ? (_HTML + _FILE + "/" + id) : (_HTML_ORGANIZATION + "/" + organizationId + _FILE + "/" + id);
+        return UrlHelper.getInstance().getContextPath() + ( organizationId == null ? (_HTML + _FILE + "/" + id) : (_HTML_ORGANIZATION + "/" + organizationId + _FILE + "/" + id));
     }
 
     public FileDto(Long id, Long organizationId, String filename, String contentType, String downloadUrl) {
@@ -130,4 +131,5 @@ public class FileDto implements CanonicalObject, OrganizationRelatedObject{
     public void setId(Long id) {
         this.id = id;
     }
+
 }

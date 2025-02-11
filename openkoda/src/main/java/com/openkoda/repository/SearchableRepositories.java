@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2016-2023, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
+Copyright (c) 2016-2024, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation
@@ -21,6 +21,21 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 package com.openkoda.repository;
 
+import static com.openkoda.model.common.ModelConstants.INDEX_STRING_COLUMN;
+import static com.openkoda.model.common.ModelConstants.UPDATED_ON;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.apache.commons.lang3.StringUtils;
+import org.hibernate.boot.model.naming.CamelCaseToUnderscoresNamingStrategy;
+import org.hibernate.boot.model.naming.Identifier;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
+import org.springframework.stereotype.Component;
+
 import com.openkoda.core.helper.ApplicationContextProvider;
 import com.openkoda.core.job.JobsScheduler;
 import com.openkoda.core.repository.common.ScopedSecureRepository;
@@ -28,19 +43,8 @@ import com.openkoda.core.security.HasSecurityRules;
 import com.openkoda.model.common.SearchableEntity;
 import com.openkoda.model.common.SearchableOrganizationRelatedEntity;
 import com.openkoda.model.common.SearchableRepositoryMetadata;
+
 import jakarta.persistence.Table;
-import org.apache.commons.lang3.StringUtils;
-import org.hibernate.boot.model.naming.CamelCaseToUnderscoresNamingStrategy;
-import org.hibernate.boot.model.naming.Identifier;
-import org.springframework.context.ApplicationContext;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import static com.openkoda.model.common.ModelConstants.INDEX_STRING_COLUMN;
-import static com.openkoda.model.common.ModelConstants.UPDATED_ON;
 
 /**
  *
@@ -48,10 +52,11 @@ import static com.openkoda.model.common.ModelConstants.UPDATED_ON;
  * @author Arkadiusz Drysch (adrysch@stratoflow.com)
  * 
  */
-public class SearchableRepositories {
+@Component
+public class SearchableRepositories implements ApplicationContextAware {
 
 
-    public static final String UPDATE_INDEX_QUERY = "UPDATE %s SET %s = (%s) where (CURRENT_TIMESTAMP - %s < interval '00:01:01')";
+    public static final String UPDATE_INDEX_QUERY = "UPDATE %s SET %s = (%s) where (CURRENT_TIMESTAMP - %s < interval '00:01:01') or index_string is null";
     private static SecureRepository<?>[] searchableRepositories = {};
     private static SecureRepository<?>[] globalSearchableRepositories = {};
 
@@ -145,8 +150,16 @@ public class SearchableRepositories {
     private static final Map<Class, SearchableRepositoryMetadata> searchableRepositoryMetadataByEntityClass = new HashMap<>();
     private static final Map<String, SearchableRepositoryMetadata> searchableOrganizationRelatedRepositoryMetadataByEntityKey = new HashMap<>();
     private static final Map<Class, SearchableRepositoryMetadata> searchableOrganizationRelatedRepositoryMetadataByEntityClass = new HashMap<>();
+    
+    private static ApplicationContext applicationContext;
+    
+    @Override
+    public void setApplicationContext(ApplicationContext applicationContext) {
+        SearchableRepositories.applicationContext = applicationContext;
+    }
+    
     public static ScopedSecureRepository getSearchableRepository(String entityKey, HasSecurityRules.SecurityScope scope) {
-        return new SecureRepositoryWrapper(searchableRepositoryByEntityKey.get(entityKey), scope);
+        return applicationContext.getBean(SecureRepositoryWrapper.class, searchableRepositoryByEntityKey.get(entityKey), scope);
     }
 
     public static void registerSearchableRepository(String tableName, SecureRepository repository) {

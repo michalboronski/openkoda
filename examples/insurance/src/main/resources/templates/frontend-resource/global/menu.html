@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <link rel="stylesheet" type="text/css" href="../public/app.css"/>
+</head>
+<body>
+<div th:fragment="users-menu">
+
+    <th:block th:if="${organizationEntity != null
+            and #strings.contains(currentUri,'organization')
+            and !#strings.contains(currentUri,'organization/all')}">
+
+        <li class="nav-item">
+            <a th:attr="data-sidebar-menu-item='dashboard'" class="nav-link" th:href="${@url.organizationDashboard(organizationEntity.id)}" onclick="app.adminMode(false)" th:text="#{template.dashboard}">Dashboard</a>
+            <th:block th:each="entry : ${@htmlCRUDControllerConfigurationMap.getExposedSorted(organizationEntity.id)}">
+                <a th:attr="data-sidebar-menu-item=${@url.all(organizationEntity.id, entry.key)}" th:if="${@auth.hasGlobalOrOrgPrivilege('readOrgData',organizationEntity.id)}" class="nav-link" th:href="${@url.all(organizationEntity.id, entry.key)}" onclick="app.adminMode(false)" th:text="${@messages.getFieldLabel(entry.key, entry.key)}">Entry</a>
+            </th:block>
+            <a th:attr="data-sidebar-menu-item=${'organization-settings-' + organizationEntity.id}" class="nav-link"  th:href="${@url.organizationSettings(organizationEntity.id)}" onclick="app.adminMode(false)" th:text="#{template.settings}">Settings</a>
+            <a th:attr="data-sidebar-menu-item=${'organization-settings-history-' + organizationEntity.id}" th:if="${@auth.hasOrgPrivilege('manageOrgData',organizationEntity.id)}" class="nav-link" th:href="${@url.organizationHistory(organizationEntity.id)}" onclick="app.adminMode(false)" th:text="#{template.audit}">Audit</a>
+        </li>
+
+    </th:block>
+
+</div>
+
+</body>
+</html>

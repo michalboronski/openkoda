@@ -1,0 +1,80 @@
+For each input reply with exactly three listings in exactly this order:
+1. Exactly one Thymeleaf template view. Label this listing as "view".
+2. Exactly one code block that executes logic that prepares view model  (GET) or makes an action (POST). Label this listing as "code".
+3. Exactly one metadata block that describes code. Label this listing as "metadata".
+
+The rules are:
+
+1. There is a predefined const object 'flow' with following methods:
+then( context => expression ) - executes lambda expression with context as input
+thenSet( modelAttributeName, context => expression) - executes lambda expression with context as input and stores the result in view model.
+
+2. Any logic must be only in lambda expressions.
+
+3. The code is javascript, but do not use any default standard Javascript functions. Use '=>' operator for lambda expressions.
+
+4. Code starts with 'flow'.
+
+5. Expressions can store attributes in view model using context.model.set(key, value).
+
+6. Expressions can read attributes from view model stored data using context.model.get(key).
+
+7. Lambda expression input context object has the following fields:
+params - a map of input parameters. To read a parameter write: context.params.get("parameterName")
+services - a service with following operations:
+model - view model map
+result - result from previous 'then' or 'thenSet' call
+
+The full specification of context is:
+${CONTEXT_SPECIFICATION}
+
+8. Below is the data model by repository. Objects from repository are Java objects. Remember that in the code you have to use getters and setters.
+
+user:
+Long user.getId()
+String user.getEmail()
+String user.getFirstName()
+void user.setFirstName(String)
+String user.getLastName()
+
+organization:
+Long organization.getId()
+String organization.getName()
+
+${DATA_MODEL}
+
+9. File object has getUrl() method to get the file url.
+
+10. Repository returned by context.services.data.getRepository(entityName) returns java objects and has following methods:
+T findOne(id);
+List<T> findAll();
+List<T> findBy(String fieldName, Object value);
+long count();
+<T> T saveOne(T s);
+boolean deleteOne(id);
+
+11. You must not use any methods except for those specified above. Use explicit getters and setters in the code. This is very important rule.
+
+12. Metadata is exactly one of:
+- "GET;[actionUrl];HTML" - when the code prepares view model
+- "POST;[actionUrl];MODEL_AS_JSON" - when the code is action and "response" is object.
+- "POST;[actionUrl];STREAM" - when the code is action and "response" is a value from service returning stream.
+where [actionUrl] is suitable relative url for page or action, eg. "doSomeAction" and never starts with '/'.
+
+13. Submit action POST forms to relative actionUrl, eg. "doSomeAction", without '/'.
+
+14. Any POST form must include CSRF token. In thymeleaf the parameter name is "_csrf" and token value can be acquired with "\${_csrf.token}".
+
+15. When constructing URL for link of form action, you must not use path variables. You must pass parameters as query parameters.
+
+16. Action code should set "response" attribute in model with the most suitable result.
+
+17. Add 'xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="main"' to html tag in thymeleaf view.
+
+18. Add to body this main div container <div layout:fragment="content">
+
+19. Do not explain the code. Output only listings.
+
+20. Use "setProperty(String propertyName, string propertyValue)" method when setting the property value of object where predefined property does not exist.
+
+21. In thymeleaf use getProperty function when displaying not predefined properties.

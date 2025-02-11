@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2016-2023, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
+Copyright (c) 2016-2024, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation
@@ -21,10 +21,17 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 package com.openkoda.core.service.event;
 
+import com.openkoda.controller.ComponentProvider;
 import com.openkoda.core.tracker.LoggingComponentWithRequestId;
 import jakarta.annotation.PostConstruct;
+import jakarta.inject.Inject;
+
 import org.apache.commons.lang3.ArrayUtils;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.context.PayloadApplicationEvent;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import reactor.util.function.Tuple6;
 import reactor.util.function.Tuples;
 
@@ -38,18 +45,21 @@ import java.util.function.Consumer;
  * This class manages events and event listeners. It provides methods to register event listeners and consumers for specific events.
  */
 @Service("applicationEventService")
-    public class ApplicationEventService implements LoggingComponentWithRequestId {
+public class ApplicationEventService extends ComponentProvider implements LoggingComponentWithRequestId {
 
     public class ListenerTupleList extends ArrayList<Tuple6<EventConsumer, String, String, String, String, Long>>{}
 
     private final ListenerTupleList empty = new ListenerTupleList();
 
     private static ApplicationEventService thisService;
+    
+    @Inject private ApplicationEventService self;
+    
+    @Inject private ApplicationEventPublisher publisher;
 
     private final static ExecutorService asyncEventsExecutor = Executors.newFixedThreadPool(4);
 
-    public Map<AbstractApplicationEvent,
-            ListenerTupleList> listeners = new HashMap<>();
+    public Map<AbstractApplicationEvent, ListenerTupleList> listeners = new HashMap<>();
 
     private LinkedHashMap<Class, List<EventConsumer>> consumers = new LinkedHashMap<>();
 
@@ -88,6 +98,17 @@ import java.util.function.Consumer;
         return eventListeners.add(Tuples.of(new EventConsumer(eventListener), staticData1, staticData2, staticData3, staticData4, null));
     }
 
+    /**
+     * This is a synchronized method that unregister all event listener for a specific event.
+     *
+     * @return a boolean value indicating whether the listener was successfully added to the list.
+     */
+    synchronized public <T> boolean unregisterEventListeners(AbstractApplicationEvent<T> event) {
+        debug("[registerEventListener] event: {}", event);
+        ListenerTupleList eventListeners = getEventListener(event);
+        listeners.remove(event);
+        return true;//eventListeners.add(Tuples.of(new EventConsumer(eventListener), staticData1, staticData2, staticData3, staticData4, null));
+    }
 
     /**
      * @return the corresponding ListenerTupleList object from the listeners map.
@@ -191,7 +212,7 @@ import java.util.function.Consumer;
      * @return true to indicate that the event was submitted for processing.
      */
     public <T> boolean emitEventAsync(AbstractApplicationEvent<T> event, T object) {
-        asyncEventsExecutor.submit(() -> emitEvent(event, object));
+        asyncEventsExecutor.submit(() -> self.emitEvent(event, object));
         return true;
     }
 
@@ -204,6 +225,10 @@ import java.util.function.Consumer;
      */
     public <T> boolean emitEvent(AbstractApplicationEvent<T> event, T object) {
         debug("[emitEvent] event: {}", event);
+        if(event instanceof CustomApplicationEvent<T>) {
+            return emitEvent((CustomApplicationEvent)event);
+        }
+        
         listeners.getOrDefault(event, empty).forEach(
                 a -> {
                     if (a.getT2() == null) {
@@ -218,9 +243,52 @@ import java.util.function.Consumer;
                         a.getT1().accept(object, a.getT2(), a.getT3(), a.getT4(), a.getT5());
                     }
                 });
+        publisher.publishEvent(event);
+        return true;
+    }
+    
+    public <T> boolean emitEventAsync(CustomApplicationEvent<T> event) {
+        asyncEventsExecutor.submit(() -> self.emitEvent(event));
+        return true;
+    }
+    
+    public <T> boolean emitEventAsync(String name, T object) {
+        @SuppressWarnings("unchecked")
+        CustomApplicationEvent<T> event = (CustomApplicationEvent<T>) CustomApplicationEvent.newInstance(CustomApplicationEvent.class, object.getClass(), name, object);
+        return this.emitEventAsync(event, null);
+    }
+    
+    @Transactional
+    public <T> boolean emitEvent(CustomApplicationEvent<T> event) {
+        debug("[emitEvent] event: {}", event);
+        listeners.entrySet().stream()   
+            .filter( l -> 
+                l.getKey().equals(event)
+                )
+            .flatMap( ll -> ll.getValue().stream())
+            .forEach(
+                a -> {
+                    if (a.getT2() == null) {
+                        a.getT1().accept(event, null);
+                    } else if (a.getT3() == null) {
+                        a.getT1().accept(event, a.getT2());
+                    } else if (a.getT4() == null) {
+                        a.getT1().accept(event, a.getT2(), a.getT3());
+                    } else if (a.getT5() == null) {
+                        a.getT1().accept(event, a.getT2(), a.getT3(), a.getT4());
+                    } else {
+                        a.getT1().accept(event, a.getT2(), a.getT3(), a.getT4(), a.getT5());
+                    }
+                });
+        
+        publisher.publishEvent(event);
         return true;
     }
 
+    @Transactional
+    public <T> boolean emitEvent(EntityApplicationEvent<T> event, T object) {
+        return emitEvent((CustomApplicationEvent)event, object);
+    }
     /**
      * @return a set view of the mappings contained in the consumers map,
      * where each mapping is a key-value pair consisting of a Class object as the key and a List of EventConsumer objects as the value.
@@ -263,4 +331,18 @@ import java.util.function.Consumer;
         return thisService;
     }
 
+    
+    public <T extends AbstractApplicationEvent<?>> T getEvent(String eventName, Object obj) {
+        // TODO this is just a faced, rework with a singe common repository 
+        Class<? extends CustomApplicationEvent> customEventType = services.customEventService.findCustomEventClass(eventName);
+        T event = null;
+        if(customEventType != null) {
+                CustomApplicationEvent<?> customEvent = CustomApplicationEvent.newInstance(customEventType, obj.getClass(), eventName, obj);
+                event = (T)customEvent;
+        } else {
+            event = (T)AbstractApplicationEvent.getEvent(eventName);
+        }
+        
+        return event;
+    }
 }

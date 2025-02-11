@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2016-2023, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
+Copyright (c) 2016-2024, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation
@@ -194,6 +194,19 @@ public class SecureEntityDictionaryRepository extends ComponentProvider implemen
         return q;
     }
 
+//    private Object getLabelForEntity(Class<T> entityClass, String keyField, String labelField, String sortField) {
+//        CriteriaBuilder cb = em.getCriteriaBuilder();
+//        CriteriaQuery<Tuple> q = cb.createQuery(Tuple.class);
+//        Root<T> root = q.from(entityClass);
+//        q.select(cb.construct(Tuple.class, root.get(keyField), root.get(labelField)));
+//        q.where(toSecurePredicate(null, null, root, q, cb, SecurityScope.USER));
+//        if (sortField != null) {
+//            q.orderBy(cb.asc(root.get(sortField)));
+//        }
+//        return q;
+//    }
+
+
     @PostConstruct void init() {
         for (String lang : languagesList) {
             Locale locale = Locale.forLanguageTag(lang);
@@ -334,7 +347,7 @@ public class SecureEntityDictionaryRepository extends ComponentProvider implemen
         return results.toString();
     }
 
-    private String toJsonString(Map<String, String> map) throws JSONException {
+    public static String toJsonString(Map<String, String> map) throws JSONException {
         JSONArray results = new JSONArray();
         JSONObject result;
         for (var entry : map.entrySet()) {
@@ -375,7 +388,7 @@ public class SecureEntityDictionaryRepository extends ComponentProvider implemen
         return results.toString();
     }
 
-    private String listStringToJsonString(List<String> allByOrganizationId) throws JSONException {
+    public static String listStringToJsonString(List<String> allByOrganizationId) throws JSONException {
         JSONArray results = new JSONArray();
         JSONObject result;
         for (String s : allByOrganizationId) {

@@ -7,31 +7,29 @@
     <th:block th:if="${genericViewNavigationFragment != null}">
       <nav th:replace="~{__${genericViewNavigationFragment}__}"></nav>
     </th:block>
-    <div class="card shadow mb-4">
-        <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between ">
+    <div class="card shadow" th:with="entityKey=${frontendMappingDefinition.getMappingKey()}">
+        <div th:fragment="card-header" class="card-header py-3 d-flex flex-row align-items-start justify-content-between gap-10">
             <h6 class="m-0 font-weight-bold text-nowrap">
                 <th:block th:if="${genericViewNavigationFragment == null}"
                           th:text="${@messages.getFieldLabel(frontendMappingDefinition.formLabel, frontendMappingDefinition.name)}"/>
             </h6>
-            <div class="d-flex align-items-center ">
-                <div class="ml-4 mr-4">
-                    <nav th:replace="~{tables::search(${frontendMappingDefinition.name}, ${organizationRelatedEntityPage})}"></nav>
-                </div>
+            <div class="d-flex align-items-start ">
+                <nav th:replace="~{tables::search(${entityKey}, ${organizationRelatedEntityPage})}"></nav>
                 <div class="dropdown no-arrow dropdown-lg dropdown-menu-md-right">
-                    <a class="dropdown-toggle" href="#" role="button" th:id="${frontendMappingDefinition.name} + '-menu'"
+                    <a class="dropdown-toggle" href="#" role="button" th:id="${entityKey} + '-menu'"
                        data-toggle="dropdown"
                        aria-haspopup="true" th:aria-expanded="${!objFilters.isEmpty()}">
                         <i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>
                     </a>
                     <div class="dropdown-menu dropdown-menu-right shadow animated--fade-in"
-                         th:aria-labelledby="${frontendMappingDefinition.name} + '-menu'">
+                         th:aria-labelledby="${entityKey} + '-menu'">
                         <th:block th:if="${#lists.size(genericTableFilters)}">
                             <button class="dropdown-item btn-link btn-simple" th:text="#{template.filter}"
                                     type="button" data-toggle="collapse"
                                     data-target="#filter-form" th:aria-expanded="${!objFilters.isEmpty()}"
                                     aria-controls="filter-form">Filter</button>
                             <button class="dropdown-item btn-link btn-simple" th:text="#{template.clearFilter}"
-                                    type="button" th:onclick="app.refreshViewWithoutEntityKeyParams([[${frontendMappingDefinition.name}]])">Clear Filter</button>
+                                    type="button" th:onclick="app.refreshViewWithoutEntityKeyParams([[${entityKey}]])">Clear Filter</button>
                         </th:block>
                         <a class="dropdown-item" th:href="'report/csv' + ${(queryString != null ? '?' + queryString : '')}" th:text="#{template.download}">Download</a>
                         <th:block th:if="${@auth.hasGlobalOrOrgPrivilege('canImportData',organizationEntityId) && #arrays.contains(@environment.getActiveProfiles(),'development')}">
@@ -53,14 +51,14 @@
                             <span class="text"><th:block th:text="#{template.filter}">Filter</th:block></span>
                         </button>
                         <button class="btn btn-primary btn-sm btn-icon-split" type="button"
-                                th:onclick="app.refreshViewWithoutEntityKeyParams([[${frontendMappingDefinition.name}]])">
+                                th:onclick="app.refreshViewWithoutEntityKeyParams([[${entityKey}]])">
                           <span class="icon text-white-50">
                             <i class="fas fa-xmark"></i>
                           </span>
                             <span class="text"><th:block th:text="#{template.clearFilter}">Clear Filter</th:block></span>
                         </button>
                     </th:block>
-                    <a class="btn-primary btn btn-sm btn-icon-split" th:href="${@url.reportCsv(organizationEntityId, frontendMappingDefinition.name)} + ${(queryString != null ? '?' + queryString : '')}">
+                    <a class="btn-primary btn btn-sm btn-icon-split" th:href="${@url.reportCsv(organizationEntityId, entityKey)} + ${(queryString != null ? '?' + queryString : '')}">
                         <span class="icon text-white-50">
                             <i class="fas fa-download"></i>
                         </span>
@@ -75,7 +73,7 @@
                             <span class="text"><th:block th:text="#{template.import}">Import</th:block></span>
                         </button>
                     </th:block>
-                    <a class="btn-primary btn btn-sm btn-icon-split" th:href="${@url.form(organizationEntityId, frontendMappingDefinition.name)}">
+                    <a class="btn-primary btn btn-sm btn-icon-split" th:href="${@url.form(organizationEntityId, entityKey)}">
                         <span class="icon text-white-50">
                             <i class="fas fa-plus"></i>
                         </span>
@@ -87,18 +85,17 @@
         </div>
 
       <div class="card-body">
-          <div th:fragment="filters" class="mb-4">
-              <form method="get" th:class="'filter-form collapse ' + ${!objFilters.isEmpty() ? 'show' : ''}" id="filter-form"
+          <th:block th:fragment="filters" class="">
+              <form method="get" th:class="'filter-form collapse mb-3 ' + ${!objFilters.isEmpty() ? 'show' : ''}" id="filter-form"
                     th:with="page=${organizationRelatedEntityPage}">
-                    
-	                  <input type="hidden" th:name="${frontendMappingDefinition.name + '_page'}"
-	                         th:value="${page.number}"/>
-	                  <input type="hidden" th:name="${frontendMappingDefinition.name + '_size'}"
+
+	                  <input type="hidden" th:name="${entityKey + '_page'}" value="0"/>
+	                  <input type="hidden" th:name="${entityKey + '_size'}"
 	                         th:value="${page.size}"/>
-	                  <input type="hidden" th:name="${frontendMappingDefinition.name + '_sort'}"
-	                         th:value="${param.get(frontendMappingDefinition.name + '_sort')}"/>
-	                  <input type="hidden" th:name="${frontendMappingDefinition.name + '_search'}"
-	                         th:value="${param.get(frontendMappingDefinition.name + '_search')}"/>
+	                  <input type="hidden" th:name="${entityKey + '_sort'}"
+	                         th:value="${param.get(entityKey + '_sort')}"/>
+	                  <input type="hidden" th:name="${entityKey + '_search'}"
+	                         th:value="${param.get(entityKey + '_search')}"/>
                     <th:block th:replace="~{forms::remainingParametersHiddenInputs}"/>
                   <div class="row">
                       <th:block th:each="field : ${genericTableFilters}">
@@ -109,53 +106,55 @@
                           </th:block>
                           <th:block
                                   th:if="${#lists.contains({T(com.openkoda.core.form.FieldType).date, T(com.openkoda.core.form.FieldType).datetime}, field.type)}">
-                              <div class="form-group col-12 col-sm-6 col-md-4 col-lg-3"
-                                th:with="filterValue=${#arrays.toArray(param.get(frontendMappingDefinition.name + '_filter_' + field.name + '_from') ?: {''})}">
-                                  <label th:for="${frontendMappingDefinition.name + '_filter_' + field.name + '_from'}"
-                                         th:text="${@messages.getFieldLabel(field.labelKey, field.getPlainName() + 'From')}"></label>
-                                  <input type="date"
-                                         class="form-control datepicker position-relative"
-                                         th:id="${frontendMappingDefinition.name + '_filter_' + field.name + '_from'}"
-                                         th:name="${frontendMappingDefinition.name + '_filter_' + field.name + '_from'}"
-                                         th:value="${filterValue[filterValue.length -1]}"/>
-                              </div>
-                              <div class="form-group col-12 col-sm-6 col-md-4 col-lg-3">
-                                  <label th:for="${frontendMappingDefinition.name + '_filter_' + field.name + '_to'}"
-                                         th:text="${@messages.getFieldLabel(field.labelKey, field.getPlainName() + 'To')}"></label>
-                                  <input type="date"
-                                         class="form-control datepicker position-relative"
-                                         th:id="${frontendMappingDefinition.name + '_filter_' + field.name + '_to'}"
-                                         th:name="${frontendMappingDefinition.name + '_filter_' + field.name + '_to'}"
-                                         th:value="${filterValue[filterValue.length -1]}"/>
-                              </div>
+                              <th:block
+                                    th:with="filterValue=${#arrays.toArray(param.get(entityKey + '_filter_' + field.name + '_from') ?: {''})}">
+                                  <div class="form-group col-12 col-sm-6 col-md-4 col-lg-3">
+                                      <label th:for="${entityKey + '_filter_' + field.name + '_from'}"
+                                             th:text="${@messages.getFieldLabel(field.labelKey, field.getPlainName() + 'From')}"></label>
+                                      <input type="date"
+                                             class="form-control datepicker position-relative"
+                                             th:id="${entityKey + '_filter_' + field.name + '_from'}"
+                                             th:name="${entityKey + '_filter_' + field.name + '_from'}"
+                                             th:value="${filterValue[filterValue.length -1]}"/>
+                                  </div>
+                                  <div class="form-group col-12 col-sm-6 col-md-4 col-lg-3">
+                                      <label th:for="${entityKey + '_filter_' + field.name + '_to'}"
+                                             th:text="${@messages.getFieldLabel(field.labelKey, field.getPlainName() + 'To')}"></label>
+                                      <input type="date"
+                                             class="form-control datepicker position-relative"
+                                             th:id="${entityKey + '_filter_' + field.name + '_to'}"
+                                             th:name="${entityKey + '_filter_' + field.name + '_to'}"
+                                             th:value="${filterValue[filterValue.length - 1]}"/>
+                                  </div>
+                              </th:block>
                           </th:block>
                           <th:block
                                   th:if="${!#lists.contains({T(com.openkoda.core.form.FieldType).date, T(com.openkoda.core.form.FieldType).datetime, T(com.openkoda.core.form.FieldType).datalist}, field.type)}">
                               <div class="form-group col-12 col-sm-6 col-md-4 col-lg-3"
-                                th:with="filterValue=${#arrays.toArray(param.get(frontendMappingDefinition.name + '_filter_' + field.name) ?: {''})}">
-                                  <label th:for="${frontendMappingDefinition.name + '_filter_' + field.name}"
+                                th:with="filterValue=${#arrays.toArray(param.get(entityKey + '_filter_' + field.name) ?: {''})}">
+                                  <label th:for="${entityKey + '_filter_' + field.name}"
                                          th:text="${@messages.getFieldLabel(field.labelKey, field.getPlainName())}"></label>
                                   <input th:if="${#lists.contains({T(com.openkoda.core.form.FieldType).text, T(com.openkoda.core.form.FieldType).textarea}, field.type)}"
                                          type="text" class="form-control "
-                                         th:id="${frontendMappingDefinition.name + '_filter_' + field.name}" th:name="${frontendMappingDefinition.name + '_filter_' + field.name}"
+                                         th:id="${entityKey + '_filter_' + field.name}" th:name="${entityKey + '_filter_' + field.name}"
                                          th:value="${filterValue[filterValue.length -1]}"
                                          th:placeholder="#{search.placeholder}"/>
                                   <input th:if="${field.type == T(com.openkoda.core.form.FieldType).number}"
                                          type="number"
                                          class="form-control "
-                                         th:id="${frontendMappingDefinition.name + '_filter_' + field.name}" th:name="${frontendMappingDefinition.name + '_filter_' + field.name}"
+                                         th:id="${entityKey + '_filter_' + field.name}" th:name="${entityKey + '_filter_' + field.name}"
                                          th:value="${filterValue[filterValue.length -1]}"
                                          th:placeholder="#{search.placeholder}"/>
 
                                   <th:block th:if="${field.type == T(com.openkoda.core.form.FieldType).checkbox}">
-                                      <select th:id="${frontendMappingDefinition.name + '_filter_' + field.name}"
-                                              th:name="${frontendMappingDefinition.name + '_filter_' + field.name}"
+                                      <select th:id="${entityKey + '_filter_' + field.name}"
+                                              th:name="${entityKey + '_filter_' + field.name}"
                                               class="selectpicker form-control">
                                       </select>
                                       <script th:inline="javascript">
                                           (function () {
-                                              let fieldId = /*[[${frontendMappingDefinition.name + '_filter_' + field.name}]]*/ '_none_';
-                                              let fieldValue = /*[[ ${param.get(frontendMappingDefinition.name + '_filter_' + field.name)}]]*/ '';
+                                              let fieldId = /*[[${'#' + entityKey + '_filter_' + field.name}]]*/ '_none_';
+                                              let fieldValue = /*[[ ${param.get(entityKey + '_filter_' + field.name)}]]*/ '';
                                               fieldValue = fieldValue + "";
                                               app.populateSelect(fieldId, fieldId, fieldValue, '__datalist_booleanValues', true, 'Select', false);
                                           })();
@@ -163,15 +162,15 @@
                                   </th:block>
                                   <th:block
                                           th:if="${#lists.contains({T(com.openkoda.core.form.FieldType).dropdown, T(com.openkoda.core.form.FieldType).many_to_one}, field.type)}">
-                                      <select th:id="${frontendMappingDefinition.name + '_filter_' + field.name}"
-                                              th:name="${frontendMappingDefinition.name + '_filter_' + field.name}"
+                                      <select th:id="${entityKey + '_filter_' + field.name}"
+                                              th:name="${entityKey + '_filter_' + field.name}"
                                               class="selectpicker form-control">
                                       </select>
                                       <script th:inline="javascript">
                                           (function () {
                                               let datalistId = /*[[${ field.datalistId }]]*/ '_none_';
-                                              let fieldId = /*[[${frontendMappingDefinition.name + '_filter_' + field.name}]]*/ '_none_';
-                                              let fieldValue = /*[[ ${param.get(frontendMappingDefinition.name + '_filter_' + field.name)}]]*/ '';
+                                              let fieldId = /*[[${'#' + entityKey + '_filter_' + field.name}]]*/ '_none_';
+                                              let fieldValue = /*[[ ${param.get(entityKey + '_filter_' + field.name)}]]*/ '';
                                               fieldValue = fieldValue + "";
                                               app.populateSelect(fieldId, fieldId, fieldValue, datalistId, true, 'Select', false);
                                           })();
@@ -188,14 +187,14 @@
                       </button>
                   </div>
               </form>
-          </div>
-        <div class="table-responsive">
+          </th:block>
+        <div layout:fragment="table" class="table-responsive">
           <table class="table table-hover">
             <thead>
             <tr>
-              <th th:replace="~{tables::asort('id', #{template.id}, ${frontendMappingDefinition.name}, ${organizationRelatedEntityPage})}"></th>
+              <th th:replace="~{tables::asort('id', #{template.id}, ${entityKey}, ${organizationRelatedEntityPage})}"></th>
                 <th:block th:each="field,iter: ${genericTableViewHeaders}">
-                  <th th:replace="~{tables::asort(${field.getPlainName()}, ${@messages.getFieldLabel(field.labelKey, field.getPlainName())}, ${frontendMappingDefinition.name}, ${organizationRelatedEntityPage})}"></th>
+                  <th th:replace="~{tables::asort(${field.getPlainName()}, ${@messages.getFieldLabel(field.labelKey, field.getPlainName())}, ${entityKey}, ${organizationRelatedEntityPage})}"></th>
                 </th:block>
               <th></th>
             </tr>
@@ -203,19 +202,35 @@
             <tbody>
             <tr th:each="a,it : ${organizationRelatedEntityPage.content}">
               <td><span th:text="${a.id}">1</span></td>
-              <td th:each="tableValue: ${genericTableViewList.get(it.index)}" >
+              <td th:each="tableValue, itCol: ${genericTableViewList.get(it.index)}"
+                  th:with="field=${genericTableViewHeaders.get(itCol.index)}"
+                  th:class="${(field.type.name == 'date' or field.type.name == 'time') ? 'text-nowrap' : ''}">
                   <th:block th:if="${tableValue == true}"><i class="fas fa-check fa-sm fa-fw text-primary"></i></th:block>
                   <th:block th:if="${tableValue == false}"></th:block>
-                  <th:block th:if="${tableValue != true and tableValue != false}" th:text="${tableValue}"></th:block>
+                  <th:block th:if="${tableValue != true and tableValue != false and field.type.name != 'many_to_one' and field.type.name != 'one_to_many'}" th:text="${tableValue}"></th:block>
+                  <th:block th:if="${field.referencedEntityKey != null and field.type.name == 'many_to_one'}">
+                      <a class="" th:text="${tableValue}"
+                         th:href="${@url.view(organizationEntityId, field.referencedEntityKey, genericTableViewList.get(it.index).getReferenceIdOf(field.referencedEntityKey))}"
+                         data-toggle="tooltip" data-placement="top" th:title="#{template.view}"></a>
+                  </th:block>
+                  <th:block th:if="${field.referencedEntityKey != null and field.type.name == 'one_to_many'}">
+                      <ul class="one-to-many mb-0">
+                          <li th:each="v : ${tableValue}">
+                              <a class="link" th:href="${@url.form(v.organizationId, field.referencedEntityKey, v.id)}" target="_blank">
+                                  <th:block th:text="${@namehelper.toEntityClassName(field.referencedEntityKey) + ' ' + v.id}"/>
+                              </a>
+                          </li>
+                      </ul>
+                  </th:block>
               </td>
               <td>
                 <div class="table-row-btns">
                   <th:block th:replace="~{forms::single-icon-post-form-with-confirm(
-                    ${'./' + a.id + '/remove'},'fas fa-trash text-danger',#{template.remove}, #{template.confirmationPrompt})}"/>
-                  <a class="" th:href="${'./' + a.id + '/settings'}" data-toggle="tooltip" data-placement="top" th:title="#{template.edit}">
+                    ${@url.remove(organizationEntityId, entityKey, a.id)}, 'fas fa-trash text-danger',#{template.remove}, #{template.confirmationPrompt})}"/>
+                  <a class="" th:href="${@url.form(organizationEntityId, entityKey, a.id)}" data-toggle="tooltip" data-placement="top" th:title="#{template.edit}">
                     <i class="fas fa-pen-to-square text-primary"></i>
                   </a>
-                  <a class="" th:href="${@url.view(organizationEntityId, frontendMappingDefinition.name, a.id)}" data-toggle="tooltip" data-placement="top" th:title="#{template.view}">
+                  <a class="" th:href="${@url.view(organizationEntityId, entityKey, a.id)}" data-toggle="tooltip" data-placement="top" th:title="#{template.view}">
                     <i class="fas fa-eye text-primary"></i>
                   </a>
                 </div>
@@ -225,10 +240,10 @@
           </table>
         </div>
       </div>
-      <nav th:replace="~{tables::tablenav(${frontendMappingDefinition.name}, ${organizationRelatedEntityPage})}"></nav>
+      <nav th:replace="~{tables::tablenav(${entityKey}, ${organizationRelatedEntityPage})}"></nav>
     </div>
 
-      <th:block th:if="${#arrays.contains(@environment.getActiveProfiles(),'development')}">
+      <th:block th:fragment="import-modal" th:if="${#arrays.contains(@environment.getActiveProfiles(),'development')}">
 
           <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
           <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
@@ -267,7 +282,7 @@
                               </div>
                               <div id="import-results" class=""></div>
                               <div id="import-success" class="d-none">
-                                  <div><pre class="mb-0"><i class="fa-regular fa-circle-check text-primary-light mr-2"></i><th:block th:text="#{template.csv.data.import.success}"/></pre></div>
+                                  <div><pre class="mb-0"><i class="fa-regular fa-circle-check text-primary-light mr-2"></i><th:block th:text="#{template.csv.data.import.done}"/></pre></div>
                                   <div class="mt-2"><a class="" href=""><i class="fa-solid fa-refresh mr-2"></i><th:block th:text="#{template.csv.data.import.refresh.view}"/></a></div>
                               </div>
 
@@ -284,8 +299,8 @@
               </div>
               <script type="text/javascript" th:inline="javascript">
 
-                  let entityKey = /*[[${ organizationRelatedObjectKey }]]*/ 'entity';
-                  let importSuccess = false;
+                  entityKey = /*[[${ organizationRelatedObjectKey }]]*/ 'entity';
+                  importSuccess = false;
 
                   function showImportResult(resultMessage) {
                       let bodyJson = JSON.parse(resultMessage.body);

@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2016-2023, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
+Copyright (c) 2016-2024, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation
@@ -55,9 +55,7 @@ public class EventListenerService extends ComponentProvider implements HasSecuri
 
     @Inject
     private ClusterEventSenderService clusterEventSenderService;
-
-
-
+    
     /**
      * Returns map of events available to assign to listeners
      * Object is a String of event (EventClassName, EventName, EventObjectType)
@@ -111,7 +109,15 @@ public class EventListenerService extends ComponentProvider implements HasSecuri
      */
     public boolean registerAllEventListenersFromDb() {
         debug("[registerAllEventListenersFromDb]");
-        repositories.unsecure.eventListener.findAll().forEach(this::registerListener);
+        
+        repositories.unsecure.eventListener.findAll().stream().filter( el -> {
+            try {
+                return !CustomApplicationEvent.class.isAssignableFrom(Class.forName(el.getEventClassName()));
+            } catch (ClassNotFoundException e) {
+                error("[registerAllEventListenersFromDb] {}", e);
+                return false;
+            }
+        }).forEach(this::registerListener);
         return true;
     }
 
@@ -122,20 +128,54 @@ public class EventListenerService extends ComponentProvider implements HasSecuri
     public Map<Object, String> setAllAvailableAppEvents() {
         debug("[setAllAvailableAppEvents]");
         for (Class<AbstractApplicationEvent> ec : eventClasses) {
-            for (Field field : ec.getFields()) {
-                String eventType = ((ParameterizedType) field.getGenericType()).getActualTypeArguments()[0].getTypeName();
-                events.put(
-                        StringUtils.join(new Object[] {
-                                field.getType().getName(),
-                                field.getName(),
-                                eventType},
-                                ","),
-                        field.getName() + " (" + NameHelper.getClassName(eventType) + ")");
-            }
+            registerEventFromEventClass(ec);
         }
         return events;
     }
 
+    /**
+     * @param ec
+     */
+    protected void registerEventFromEventClass(Class<? extends AbstractApplicationEvent> ec) {
+        for (Field field : ec.getFields()) {
+            String eventType = ((ParameterizedType) field.getGenericType()).getActualTypeArguments()[0].getTypeName();
+            events.put(
+                    StringUtils.join(new Object[] {
+                            field.getType().getName(),
+                            field.getName(),
+                            eventType},
+                            ","),
+                    field.getName() + " (" + NameHelper.getClassName(eventType) + ")");
+        }
+    }
+
+    
+    /**
+     * @param ec
+     */
+    public <T> void registerCustomEventFromEventClass(CustomApplicationEvent<T> ec, Class<T> clazz) {
+            events.put(
+                    StringUtils.join(new Object[] {
+                            ec.getClass().getName(),
+                            ec.getName(),
+                            clazz.getName()},
+                            ","),
+                    ec.getEventName() + " (" + clazz.getSimpleName().split("_")[0] + ")");
+    }
+    
+    /**
+     * @param ec
+     */
+    public <T> void registerCustomEventFromEventClass(EntityApplicationEvent<T> ec, Class<T> clazz) {
+            events.put(
+                    StringUtils.join(new Object[] {
+                            ec.getClass().getName(),
+                            ec.getEventName(),
+                            clazz.getName()},
+                            ","),
+                    ec.getEventName() + " (" + clazz.getSimpleName().split("_")[0] + ")");
+    }
+    
     /**
      * This method sets all available application consumers
      */
@@ -170,10 +210,16 @@ public class EventListenerService extends ComponentProvider implements HasSecuri
      * @throws NoSuchFieldException
      * @throws IllegalAccessException
      */
-    private AbstractApplicationEvent getEventByClassAndName(String className, String fieldName) throws ClassNotFoundException, NoSuchFieldException, IllegalAccessException {
-        debug("Getting event by class: {} and name: {}", className, fieldName);
-        Field field = Class.forName(className).getField(fieldName);
-        return (AbstractApplicationEvent) field.get(this);
+    private AbstractApplicationEvent getEventByClassAndName(String className, String eventName, Class<?> objClass) throws ClassNotFoundException, NoSuchFieldException, IllegalAccessException {
+        debug("Getting event by class: {} and name: {}", className, objClass);
+        Class<? extends CustomApplicationEvent> customEventClass = services.customEventService.findCustomEventClass(eventName);
+        if(customEventClass == null) {
+            Field field = Class.forName(className).getField(eventName);
+            return (AbstractApplicationEvent) field.get(this);
+        } else {
+            return CustomApplicationEvent.newInstance(customEventClass, objClass, eventName);
+        }
+        
     }
 
 
@@ -313,10 +359,20 @@ public class EventListenerService extends ComponentProvider implements HasSecuri
                     eventListenerEntry.getConsumerMethodName(),
                     numberOfConsumerMethodParameters
             );
+            
+            if (consumer == null) {
+                eventObjectClass = Class.forName(eventListenerEntry.getEventClassName());
+                consumer = getConsumer(
+                        eventObjectClass,
+                        eventListenerEntry.getConsumerClassName(),
+                        eventListenerEntry.getConsumerMethodName(),
+                        numberOfConsumerMethodParameters
+                );
+            }
             if (consumer != null) {
                 info("Registering event listener {}", eventListenerEntry);
                 services.applicationEvent.registerEventListener(
-                        getEventByClassAndName(eventListenerEntry.getEventClassName(), eventListenerEntry.getEventName()),
+                        getEventByClassAndName(eventListenerEntry.getEventClassName(), eventListenerEntry.getEventName(), eventObjectClass),
                         consumer,
                         eventListenerEntry.getStaticData1(),
                         eventListenerEntry.getStaticData2(),
@@ -366,5 +422,18 @@ public class EventListenerService extends ComponentProvider implements HasSecuri
 
     public Map<Object, Map<String, String>> getConsumersArray() {
         return consumersArray;
+    }
+
+    public void unregisterCustomEventFromEventClass(CustomApplicationEvent e) {
+        events.remove(StringUtils.join(new Object[] {
+                        e.getClass().getName(),
+                        e.getName(),
+                        e.getClassName()},
+                        ","));
+    }
+
+    public void unregisterEventClass(Class<? extends CustomApplicationEvent> clazz) {
+        eventClasses.remove(clazz);
+        
     }
 }

@@ -1,0 +1,11 @@
+!!com.openkoda.service.export.dto.FormConversionDto
+"code": "code/form/Client.js"
+"module": "core"
+"name": "Client"
+"organizationId": !!null "null"
+"readPrivilege": "manageOrgData"
+"registerApiCrudController": !!bool "true"
+"registerHtmlCrudController": !!bool "true"
+"tableColumns": "clientId,firstName,lastName,dateOfBirth,gender,email,address,companyName,companyLegalName,taxNumber,contactPerson,contactAddress,billingAddress,contactNumber,clientStatus,clientType"
+"tableName": "dynamic_CLIENT"
+"writePrivilege": "manageOrgData"

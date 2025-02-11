@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2016-2023, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
+Copyright (c) 2016-2024, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation
@@ -77,6 +77,6 @@ public class PublicFrontendResourceController extends AbstractFrontendResourceCo
         if(subPath == null) {
             subPath = "";
         }
-        return invokeFrontendResourceEntry(null, finalPath, null, subPath, ControllerEndpoint.HttpMethod.valueOf(request.getMethod()), draft, requestParams, form);
+        return invokeFrontendResourceEntry(null, finalPath, null, subPath, ControllerEndpoint.HttpMethod.valueOf(request.getMethod()), draft, requestParams, form, response);
     }
 }

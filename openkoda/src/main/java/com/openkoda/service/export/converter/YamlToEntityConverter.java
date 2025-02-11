@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2016-2023, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
+Copyright (c) 2016-2024, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation
@@ -21,11 +21,21 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 package com.openkoda.service.export.converter;
 
+import com.openkoda.service.export.ClasspathComponentImportService.SyncStatus;
+import org.apache.commons.io.IOUtils;
+
+import java.io.FileReader;
 import java.io.IOException;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
+import static com.openkoda.service.export.FolderPathConstants.EXPORT_CODE_PATH_;
+import static com.openkoda.service.export.FolderPathConstants.EXPORT_PATH_;
+
 public interface YamlToEntityConverter<T, D>{
+
+
     T convertAndSave(D dto, String filePath);
     T convertAndSave(D dto, String filePath, Map<String, String> resources);
     default String loadResourceAsString(String path) {
@@ -33,9 +43,16 @@ public interface YamlToEntityConverter<T, D>{
             if (this.getClass().getClassLoader().getResourceAsStream(path) == null){
                 throw new ResourceLoadingException("File not found under the path: " + path);
             }
+//            String result = readAsFile ?
+//                    IOUtils.toString(new FileReader(EXPORT_PATH_ + path)) :
             return new String(this.getClass().getClassLoader().getResourceAsStream(path).readAllBytes(), StandardCharsets.UTF_8);
+//            return result;
         } catch (IOException e) {
             throw new ResourceLoadingException("Couldn't read the file under the path: " + path);
         }
     }
+    default boolean hasContent() {return false;}
+    SyncStatus checkSyncStatus(D dto);
+//    default boolean readFromFilesystem() {return false;};
+
 }

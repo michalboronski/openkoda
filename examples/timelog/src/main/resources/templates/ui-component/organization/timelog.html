@@ -169,6 +169,8 @@
                                         <div th:text="${t.assignment != null ? t.assignment.ticket.name : ''}"
                                              class="font-weight-bold"/>
                                         <div th:text="${t.description}" class="text-break"/>
+                                        <<div th:if="${@auth.hasGlobalPrivilege('canAccessGlobalSettings')}" th:text="${t.assignment != null ? t.assignment.user.name : ''}"
+                                              th:class="'font-weight-bold ' + (${@auth.isItYou(t.assignment.user.id)} ? 'badge badge-danger' : '')"/>
                                     </div>
                                     <div class="d-flex day-log-buttons">
                                         <a class="text-primary"

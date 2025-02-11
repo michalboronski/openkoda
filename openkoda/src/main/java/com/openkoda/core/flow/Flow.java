@@ -20,14 +20,15 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 package com.openkoda.core.flow;
+
+import com.openkoda.core.flow.parameters.BusinessParametersMap;
+import com.openkoda.core.flow.parameters.RequestParametersMap;
 import org.graalvm.polyglot.PolyglotException;
 import reactor.util.function.*;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.util.Collections;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -50,29 +51,33 @@ public class Flow<I, O, CP> implements Function <ResultAndModel<I, CP>, O>, Base
 
     public final CP services;
 
-    public final Map<String, Object> params;
+    public final RequestParametersMap requestParameters;
+    public final BusinessParametersMap businessProperties;
+    public final List<String> arguments;
 
     public static boolean FULL_STACKTRACE_IN_ERROR = true;
 
-    public static Map<String, Object> initParamsMap(Map<String, Object> params) {
+    public static RequestParametersMap initParamsMap(Map<String, Object> params) {
         if( params == null ) {
-            return Collections.emptyMap();
+            return new RequestParametersMap(Collections.emptyMap());
         }
-        return Collections.unmodifiableMap(params);
+        return new RequestParametersMap(Collections.unmodifiableMap(params));
     }
 
-    protected <II, IO, ICP> Flow<II, IO, ICP> constructFlow(Map<String, Object> params, ICP services, Function <ResultAndModel<II, ICP>, IO> f, Supplier<TransactionalExecutor> transactionalExecutorProvider,
+    protected <II, IO, ICP> Flow<II, IO, ICP> constructFlow(RequestParametersMap params, BusinessParametersMap businessProperties, List<String> arguments, ICP services, Function <ResultAndModel<II, ICP>, IO> f, Supplier<TransactionalExecutor> transactionalExecutorProvider,
                                                             Consumer<Function> onThen) {
-        return new Flow<>(params, services, f, transactionalExecutorProvider, onThen);
+        return new Flow<>(params, businessProperties, arguments, services, f, transactionalExecutorProvider, onThen);
     }
 
-    protected<IR, ICP> ResultAndModel<IR, ICP> constructResultAndModel(PageModelMap model, IR result, ICP services, Map<String, Object> params) {
-        return new ResultAndModel<>(model, result, services, params);
+    protected<IR, ICP> ResultAndModel<IR, ICP> constructResultAndModel(PageModelMap model, IR result, ICP services, RequestParametersMap params, BusinessParametersMap businessProperties, List<String> arguments) {
+        return new ResultAndModel<>(model, result, services, params, businessProperties, arguments);
     }
 
-    protected Flow(Map<String, Object> params, CP services, Function <ResultAndModel<I, CP>, O> f, Supplier<TransactionalExecutor> transactionalExecutorProvider,
+    protected Flow(RequestParametersMap requestParameters, BusinessParametersMap businessProperties, List<String> arguments, CP services, Function <ResultAndModel<I, CP>, O> f, Supplier<TransactionalExecutor> transactionalExecutorProvider,
                    Consumer<Function> onThen) {
-        this.params = params;
+        this.requestParameters = requestParameters;
+        this.businessProperties = businessProperties;
+        this.arguments = arguments;
         this.f = f;
         this.transactionalExecutorProvider = transactionalExecutorProvider;
         this.services = services;
@@ -80,8 +85,10 @@ public class Flow<I, O, CP> implements Function <ResultAndModel<I, CP>, O>, Base
         flowCounter++;
     }
 
-    protected Flow(Map<String, Object> params, CP services, Function <ResultAndModel<I, CP>, O> f) {
-        this.params = params;
+    protected Flow(RequestParametersMap requestParameters, BusinessParametersMap businessProperties, List<String> arguments, CP services, Function <ResultAndModel<I, CP>, O> f) {
+        this.requestParameters = requestParameters;
+        this.businessProperties = businessProperties;
+        this.arguments = arguments;
         this.f = f;
         this.services = services;
         flowCounter++;
@@ -99,8 +106,8 @@ public class Flow<I, O, CP> implements Function <ResultAndModel<I, CP>, O>, Base
     public <N, OI, OO> Flow<I,OO,CP> thenWithoutResult(Function <ResultAndModel<OI,CP>, OO> after) {
         Objects.requireNonNull(after);
         copyTransactionalExecutorProvider(after);
-        return constructFlow(params, services,
-                (ResultAndModel<I, CP> t) -> after.apply( constructResultAndModel(t.model, (f.apply(t) == null ? null : null), services, params)),
+        return constructFlow(requestParameters, businessProperties, arguments, services,
+                (ResultAndModel<I, CP> t) -> after.apply( constructResultAndModel(t.model, (f.apply(t) == null ? null : null), services, requestParameters, businessProperties, arguments)),
                 transactionalExecutorProvider, onThen);
     }
 
@@ -108,7 +115,7 @@ public class Flow<I, O, CP> implements Function <ResultAndModel<I, CP>, O>, Base
     public <N> Flow<I,N,CP> then(Function <ResultAndModel<O,CP>, N> after) {
         Objects.requireNonNull(after);
         copyTransactionalExecutorProvider(after);
-        return constructFlow(params, services, (ResultAndModel<I, CP> t) -> after.apply( constructResultAndModel(t.model, f.apply(t), t.services, params)), transactionalExecutorProvider, onThen);
+        return constructFlow(requestParameters, businessProperties, arguments, services, (ResultAndModel<I, CP> t) -> after.apply(constructResultAndModel(t.model, f.apply(t), t.services, requestParameters, businessProperties, t.arguments)), transactionalExecutorProvider, onThen);
     }
 
     public <N> Flow<I,N,CP> thenSetDefault(PageAttr<N> pageAttr) {
@@ -175,78 +182,82 @@ public class Flow<I, O, CP> implements Function <ResultAndModel<I, CP>, O>, Base
     public <N> Flow<I,N,CP> thenSet(PageAttr<N> pageAttr, Function <ResultAndModel<O,CP>, N> after) {
         Objects.requireNonNull(after);
         copyTransactionalExecutorProvider(after);
-        return constructFlow(params, services, (ResultAndModel<I, CP> t) -> t.model.put(pageAttr , after.apply( constructResultAndModel(t.model, f.apply(t), t.services, params))), transactionalExecutorProvider, onThen);
+        return constructFlow(requestParameters, businessProperties, arguments, services, (ResultAndModel<I, CP> t) -> t.model.put(pageAttr , after.apply( constructResultAndModel(t.model, f.apply(t), t.services, requestParameters, businessProperties, t.arguments))), transactionalExecutorProvider, onThen);
     }
 
     public <N1, N2> Flow<I,Tuple2<N1, N2>,CP> thenSet(PageAttr<N1> pa1, PageAttr<N2> pa2, Function <ResultAndModel<O,CP>, Tuple2<N1, N2>> after) {
         Objects.requireNonNull(after);
         copyTransactionalExecutorProvider(after);
-        return constructFlow(params, services, (ResultAndModel<I, CP> t) -> t.model.put(pa1, pa2, after.apply( constructResultAndModel(t.model, f.apply(t), t.services, params))), transactionalExecutorProvider, onThen);
+        return constructFlow(requestParameters, businessProperties, arguments, services, (ResultAndModel<I, CP> t) -> t.model.put(pa1, pa2, after.apply( constructResultAndModel(t.model, f.apply(t), t.services, requestParameters, businessProperties, t.arguments))), transactionalExecutorProvider, onThen);
     }
     public <N1, N2, N3> Flow<I,Tuple3<N1, N2, N3>,CP> thenSet(PageAttr<N1> pa1, PageAttr<N2> pa2, PageAttr<N3> pa3, Function <ResultAndModel<O,CP>, Tuple3<N1, N2, N3>> after) {
         Objects.requireNonNull(after);
         copyTransactionalExecutorProvider(after);
-        return constructFlow(params, services, (ResultAndModel<I, CP> t) -> t.model.put(pa1, pa2, pa3, after.apply( constructResultAndModel(t.model, f.apply(t), t.services, params))), transactionalExecutorProvider, onThen);
+        return constructFlow(requestParameters, businessProperties, arguments, services, (ResultAndModel<I, CP> t) -> t.model.put(pa1, pa2, pa3, after.apply( constructResultAndModel(t.model, f.apply(t), t.services, requestParameters, businessProperties, t.arguments))), transactionalExecutorProvider, onThen);
     }
     public <N1, N2, N3, N4> Flow<I,Tuple4<N1, N2, N3, N4>,CP> thenSet(PageAttr<N1> pa1, PageAttr<N2> pa2, PageAttr<N3> pa3, PageAttr<N4> pa4, Function <ResultAndModel<O,CP>, Tuple4<N1, N2, N3, N4>> after) {
         Objects.requireNonNull(after);
         copyTransactionalExecutorProvider(after);
-        return constructFlow(params, services, (ResultAndModel<I, CP> t) -> t.model.put(pa1, pa2, pa3, pa4, after.apply( constructResultAndModel(t.model, f.apply(t), t.services, params))), transactionalExecutorProvider, onThen);
+        return constructFlow(requestParameters, businessProperties, arguments, services, (ResultAndModel<I, CP> t) -> t.model.put(pa1, pa2, pa3, pa4, after.apply( constructResultAndModel(t.model, f.apply(t), t.services, requestParameters, businessProperties, t.arguments))), transactionalExecutorProvider, onThen);
     }
     public <N1, N2, N3, N4, N5> Flow<I,Tuple5<N1, N2, N3, N4, N5>,CP> thenSet(PageAttr<N1> pa1, PageAttr<N2> pa2, PageAttr<N3> pa3, PageAttr<N4> pa4, PageAttr<N5> pa5,  Function <ResultAndModel<O,CP>, Tuple5<N1, N2, N3, N4, N5>> after) {
         Objects.requireNonNull(after);
         copyTransactionalExecutorProvider(after);
-        return constructFlow(params, services, (ResultAndModel<I, CP> t) -> t.model.put(pa1, pa2, pa3, pa4, pa5, after.apply( constructResultAndModel(t.model, f.apply(t), t.services, params))), transactionalExecutorProvider, onThen);
+        return constructFlow(requestParameters, businessProperties, arguments, services, (ResultAndModel<I, CP> t) -> t.model.put(pa1, pa2, pa3, pa4, pa5, after.apply( constructResultAndModel(t.model, f.apply(t), t.services, requestParameters, businessProperties, t.arguments))), transactionalExecutorProvider, onThen);
     }
 
     public <N1, N2, N3, N4, N5, N6> Flow<I,Tuple6<N1, N2, N3, N4, N5, N6>,CP> thenSet(PageAttr<N1> pa1, PageAttr<N2> pa2, PageAttr<N3> pa3, PageAttr<N4> pa4, PageAttr<N5> pa5, PageAttr<N6> pa6,  Function <ResultAndModel<O,CP>, Tuple6<N1, N2, N3, N4, N5, N6>> after) {
         Objects.requireNonNull(after);
         copyTransactionalExecutorProvider(after);
-        return constructFlow(params, services, (ResultAndModel<I, CP> t) -> t.model.put(pa1, pa2, pa3, pa4, pa5, pa6, after.apply( constructResultAndModel(t.model, f.apply(t), t.services, params))), transactionalExecutorProvider, onThen);
+        return constructFlow(requestParameters, businessProperties, arguments, services, (ResultAndModel<I, CP> t) -> t.model.put(pa1, pa2, pa3, pa4, pa5, pa6, after.apply( constructResultAndModel(t.model, f.apply(t), t.services, requestParameters, businessProperties, t.arguments))), transactionalExecutorProvider, onThen);
     }
 
     public static <A, CP> Flow<A, A, CP> init() {
-        return new Flow<>(initParamsMap(null), null, a -> a.result);
+        return new Flow<>(initParamsMap(null), null, new ArrayList<>(), null, a -> a.result);
     }
 
     public static <A, CP> Flow<A, A, CP> init(CP services) {
-        return new Flow<>(initParamsMap(null), services, a -> a.result);
+        return new Flow<>(initParamsMap(null), null, new ArrayList<>(), services, a -> a.result);
     }
 
     public static <A, CP> Flow<A, A, CP> init(CP services, Map params) {
-        return new Flow<>(initParamsMap(params), services, a -> a.result);
+        return new Flow<>(initParamsMap(params), null, new ArrayList<>(), services, a -> a.result);
+    }
+
+    public static <A,CP> Flow<A, A,CP> init(CP services, Map params, A initValue) {
+        return new Flow<>(initParamsMap(params), null, new ArrayList<>(), services, a -> initValue);
     }
 
     public static <A,CP> Flow<A, A,CP> init(Supplier<TransactionalExecutor> transactionalExecutorProvider) {
-        return new Flow<>(initParamsMap(null), null, a -> a.result, transactionalExecutorProvider, null);
+        return new Flow<>(initParamsMap(null), null, new ArrayList<>(), null, a -> a.result, transactionalExecutorProvider, null);
     }
 
     public static <A,CP> Flow<A, A,CP> init(CP services, Supplier<TransactionalExecutor> transactionalExecutorProvider) {
-        return new Flow<>(initParamsMap(null), services, a -> a.result, transactionalExecutorProvider, null);
+        return new Flow<>(initParamsMap(null), null, new ArrayList<>(), services, a -> a.result, transactionalExecutorProvider, null);
     }
 
     public static <I, O,CP> Flow<I, O,CP> init(CP services, Function <ResultAndModel<I, CP>, O> f) {
-        return new Flow(initParamsMap(null), services, f);
+        return new Flow(initParamsMap(null), null, new ArrayList<>(), services, f);
     }
 
     public static <A,CP> Flow<A, A,CP> init(CP services, A initValue) {
-        return new Flow<>(initParamsMap(null), services, a -> initValue);
+        return new Flow<>(initParamsMap(null), null, new ArrayList<>(), services, a -> initValue);
     }
 
     public static <A1, A2,CP> Flow<Tuple2<A1, A2>, Tuple2<A1, A2>,CP> init(CP services, A1 a1, A2 a2) {
-        return new Flow<>(initParamsMap(null), services, a -> Tuples.of(a1, a2));
+        return new Flow<>(initParamsMap(null), null, new ArrayList<>(), services, a -> Tuples.of(a1, a2));
     }
 
     public static <A1, A2, A3,CP> Flow<Tuple3<A1, A2, A3>, Tuple3<A1, A2, A3>,CP> init(CP services, A1 a1, A2 a2, A3 a3) {
-        return new Flow<>(initParamsMap(null), services, a -> Tuples.of(a1, a2, a3));
+        return new Flow<>(initParamsMap(null), null, new ArrayList<>(), services, a -> Tuples.of(a1, a2, a3));
     }
 
     public static <A1, A2, A3, A4, A5,CP> Flow<Tuple5<A1, A2, A3, A4, A5>, Tuple5<A1, A2, A3, A4, A5>,CP> init(CP services, A1 a1, A2 a2, A3 a3, A4 a4, A5 a5) {
-        return new Flow<>(initParamsMap(null), services, a -> Tuples.of(a1, a2, a3, a4, a5));
+        return new Flow<>(initParamsMap(null), null, new ArrayList<>(), services, a -> Tuples.of(a1, a2, a3, a4, a5));
     }
 
     public static <A1, A2, A3, A4, A5, A6,CP> Flow<Tuple6<A1, A2, A3, A4, A5, A6>, Tuple6<A1, A2, A3, A4, A5, A6>,CP> init(CP services, A1 a1, A2 a2, A3 a3, A4 a4, A5 a5, A6 a6) {
-        return new Flow<>(initParamsMap(null), services, a -> Tuples.of(a1, a2, a3, a4, a5, a6));
+        return new Flow<>(initParamsMap(null), null, new ArrayList<>(), services, a -> Tuples.of(a1, a2, a3, a4, a5, a6));
     }
 
     public static <A1,CP> Flow<A1, A1, CP> init(PageAttr<A1> a1, A1 t) {
@@ -302,13 +313,13 @@ public class Flow<I, O, CP> implements Function <ResultAndModel<I, CP>, O>, Base
                 transactionalExecutor = transactionalExecutorProvider.get();
             }
             if(transactionalExecutor == null) {
-                result = apply(constructResultAndModel(model, null, services, params));
+                result = apply(constructResultAndModel(model, null, services, requestParameters, businessProperties, new ArrayList<>()));
             } else {
-                transactionalExecutor.executeInTransaction(() -> apply(constructResultAndModel(model, null, services, params)));
+                transactionalExecutor.executeInTransaction(() -> apply(constructResultAndModel(model, null, services, requestParameters, businessProperties, new ArrayList())));
             }
             model.put(isError, message, false, "");
             applyPostExecuteProcessors(model);
-            return constructResultAndModel(model, result, services, params);
+            return constructResultAndModel(model, result, services, requestParameters, businessProperties, new ArrayList());
         } catch (HttpStatusException e) {
             logError(e);
             model.put(isError, message, error, exception, true, getSimpleErrorMessage(e), getMessageString(e), e);
@@ -333,7 +344,7 @@ public class Flow<I, O, CP> implements Function <ResultAndModel<I, CP>, O>, Base
             throw e;
         }
         applyPostExecuteProcessors(model);
-        return constructResultAndModel(model, null, services, params);
+        return constructResultAndModel(model, null, services, requestParameters, businessProperties, new ArrayList());
     }
 
     private void logError(Exception e) {
@@ -390,6 +401,6 @@ public class Flow<I, O, CP> implements Function <ResultAndModel<I, CP>, O>, Base
     public Flow<I,Object,CP> thenSet(String modelKey, Function<ResultAndModel<O,CP>, Object> after) {
         Objects.requireNonNull(after);
         copyTransactionalExecutorProvider(after);
-        return constructFlow(params, services, (ResultAndModel<I, CP> t) -> t.model.put(modelKey , after.apply( constructResultAndModel(t.model, f.apply(t), t.services, params))), transactionalExecutorProvider, onThen);
+        return constructFlow(requestParameters, businessProperties, arguments, services, (ResultAndModel<I, CP> t) -> t.model.put(modelKey , after.apply( constructResultAndModel(t.model, f.apply(t), t.services, requestParameters, businessProperties, new ArrayList()))), transactionalExecutorProvider, onThen);
     }
 }

@@ -6,6 +6,7 @@ requiredPrivilege: null
 type: "HTML"
 resourceType : "UI_COMPONENT"
 content: "templates/ui-component/organization/dashboard.html"
+module: "timelog"
 controllerEndpoints:
   - subpath:
     httpHeaders:

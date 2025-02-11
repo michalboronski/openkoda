@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2016-2023, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
+Copyright (c) 2016-2024, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation
@@ -21,24 +21,19 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 package com.openkoda.uicomponent.live;
 
-import java.io.InputStream;
-import java.util.List;
-import java.util.Map;
-
+import com.openkoda.core.customisation.ServerJSRunner;
+import com.openkoda.uicomponent.SystemServices;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
-import com.openkoda.core.customisation.ServerJSRunner;
-import com.openkoda.uicomponent.SystemServices;
-
-import jakarta.inject.Inject;
+import java.io.InputStream;
+import java.util.List;
+import java.util.Map;
 
 
 @Component
 @Profile("cloud")
 public class SecureLiveSystemServices implements SystemServices {
-
-    @Inject ServerJSRunner serverJSRunner;
 
     /**
      * Runs Server side code (AKA ServerJS) by its name.
@@ -79,4 +74,7 @@ public class SecureLiveSystemServices implements SystemServices {
     public byte[] runCommandToByteArray(String command) {
         return null;
     }
+
+    @Override
+    public void setServerJSRunner(ServerJSRunner serverJSRunner) { }
 }

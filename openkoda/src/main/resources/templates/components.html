@@ -9,35 +9,74 @@
         <nav th:replace="~{navigation-fragments::configuration-nav-tabs('components')}"></nav>
 
         <div class="card shadow mb-4">
-            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between gap-10">
+                <h6 class="m-0 font-weight-bold text-nowrap"><th:block th:text="#{template.exportToYaml.application}"></th:block></h6>
                 <div class="card-header-buttons">
                 </div>
             </div>
             <div class="card-body">
-                <div class="mb-3">
-                    <a class="btn-primary btn btn-sm" th:href="${@url.exportAllYamlResources()}"
-                       th:download="${@environment.getProperty('components.export.zip.filename')}"
-                       th:text="#{template.exportAllToYaml}">Export All</a>
-                </div>
+                <p>Export complete Openkoda application, including all application components like forms, web endpoints,
+                    server-side JS, resources, configuration of events listeners and schedulers, etc.
+                    <br/>
+                    You can then import this package into another Openkoda instance to install the exported application to a new server.</p>
+                <a class="btn-primary btn btn-sm" th:href="${@url.exportAllYamlResources()}"
+                   th:download="${@environment.getProperty('components.export.zip.filename')}"
+                   th:text="#{template.exportToYaml.application}">Export All</a>
+            </div>
+        </div>
 
-                <div class="mb-3">
-                    <form method="POST" th:action="${@url.importComponentsZip()}" enctype="multipart/form-data">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between gap-10">
+                <h6 class="m-0 font-weight-bold text-nowrap"><th:block th:text="#{template.import.application}"></th:block></h6>
+                <div class="card-header-buttons">
+                </div>
+            </div>
+            <div class="card-body">
+                <p>Import Openkoda application package to install a new application to this instance.</p>
+                <form method="POST" th:action="${@url.importComponentsZip()}" enctype="multipart/form-data">
+                    <div class="form-group">
                         <label for="componentsImportFile" class="form-label" th:text="#{template.components.import}"></label>
                         <input class="form-control" type="file" id="componentsImportFile" name="file" accept=".zip">
-                        <div class="mt-2 mb-2">
-                          <input id="delete" type="checkbox" name="delete">
-                          <label class="checkbox-label" for="delete" th:text="#{template.components.import.delete}"></label>
-                        </div>
-                        <input type="submit" class="btn-primary btn btn-sm" th:value="#{template.import}">
+                    </div>
+                    <div class="form-group">
+                        <input id="delete" type="checkbox" name="delete">
+                        <label class="checkbox-label" for="delete" th:text="#{template.components.import.delete}"></label>
+                    </div>
+                    <input type="submit" class="btn-primary btn btn-sm" th:value="#{template.import.application}">
 
-                    </form>
+                </form>
+                <pre th:if="${importLog}" class="mt-3"><th:block th:text="${importLog}"></th:block></pre>
+            </div>
+        </div>
+
+        <div th:if="${@environment.getProperty('components.export.syncWithFilesystem') == 'true'}" class="card shadow mb-4">
+            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between gap-10">
+                <h6 class="m-0 font-weight-bold text-nowrap">Local Package Development</h6>
+                <div class="card-header-buttons">
                 </div>
-                <pre class="mb-3"><th:block th:text="${importLog}"></th:block></pre>
+            </div>
+            <div class="card-body">
+                <p>
+                    It looks like you are running the application locally and modifying an exported package that synchronizes with your file system.
+                <br/>
+                    If you modified the components and their code in your filesystem, you can apply the changes to the application below.
+                <br/>
+                <div class="alert alert-success" th:if="${componentsSyncStatus.isEmpty()}">
+                    All components are synchronized.
+                </div>
+                <table th:if="${!componentsSyncStatus.isEmpty()}">
+                    <tr><th>Component</th><th>Status</th><th></th></tr>
+                    <tr th:each="c,it : ${componentsSyncStatus}"><td th:text="${c.key}"></td><td th:text="${c.value}"></td>
+                        <td th:id="${'cta-' + it.index}"><form th:replace="~{forms::single-button-post-form-with-callback(${@url.reloadComponentFromResources() + '?component=' + c.key}, #{template.component.reload.from.resources}, 'a => $(\'#cta-' + ${it.index} + '\').replaceWith(a ? \'<td><div>Applied!</div></td>\' : \'<td><div>Error occured</div></td>\')')}"></form></td></tr>
+                </table>
             </div>
         </div>
 
     </div>
 </div>
+
+
+
 
 
 </body>

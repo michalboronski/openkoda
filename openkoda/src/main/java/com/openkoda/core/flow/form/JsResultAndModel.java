@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2016-2023, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
+Copyright (c) 2016-2024, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation
@@ -24,24 +24,35 @@ package com.openkoda.core.flow.form;
 import com.openkoda.core.flow.Flow;
 import com.openkoda.core.flow.PageModelMap;
 import com.openkoda.core.flow.ResultAndModel;
+import com.openkoda.core.flow.parameters.BusinessParametersMap;
+import com.openkoda.core.flow.parameters.RequestParametersMap;
 import com.openkoda.core.form.AbstractOrganizationRelatedEntityForm;
+import com.openkoda.core.helper.ApplicationContextProvider;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 public class JsResultAndModel<R, CP, F extends AbstractOrganizationRelatedEntityForm> extends ResultAndModel<R, CP> {
 
     public final F form;
 
-    protected JsResultAndModel(PageModelMap model, R result, CP services, Map<String, Object> params, F form) {
-        super(model, result, services, params);
+    protected JsResultAndModel(PageModelMap model, R result, CP services, RequestParametersMap params, BusinessParametersMap businessProperties, F form, List<String> arguments) {
+        super(model, result, services, params, businessProperties, arguments);
         this.form = form;
     }
 
     //TODO: class to one package up, make this class package
     public static <CP, FP extends AbstractOrganizationRelatedEntityForm> JsResultAndModel constructNew(CP services, Map params, FP form) {
-        JsResultAndModel result = new JsResultAndModel(new PageModelMap(), null, services, Flow.initParamsMap(params), form);
-        return result;
+        return constructNew(services, params, form, new ArrayList<String>());
+    }
 
+    public static <CP, FP extends AbstractOrganizationRelatedEntityForm> JsResultAndModel constructNew(CP services, Map params, FP form, List<String> arguments) {
+        return new JsResultAndModel(new PageModelMap(), null, services, Flow.initParamsMap(params), ApplicationContextProvider.getContext().getBean(BusinessParametersMap.class), form, arguments);
+    }
+
+    public static <CP, FP extends AbstractOrganizationRelatedEntityForm> JsResultAndModel constructNew(CP services, Map params, BusinessParametersMap businessParameters, FP form, List<String> arguments) {
+        return new JsResultAndModel(new PageModelMap(), null, services, Flow.initParamsMap(params), businessParameters, form, arguments);
     }
 
 

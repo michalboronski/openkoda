@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2016-2023, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
+Copyright (c) 2016-2024, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software
  and associated documentation files (the "Software"), to deal in the Software without restriction, 
@@ -26,6 +26,8 @@ package com.openkoda.core.service;
 
 import com.openkoda.controller.ComponentProvider;
 import com.openkoda.core.exception.FrontendResourceValidationException;
+import com.openkoda.core.helper.ResourcesHelper;
+import com.openkoda.model.component.ControllerEndpoint;
 import com.openkoda.model.component.FrontendResource;
 import jakarta.annotation.PostConstruct;
 import org.apache.commons.codec.digest.DigestUtils;
@@ -215,4 +217,35 @@ public class FrontendResourceService extends ComponentProvider {
         return url == null ? "" : url.toString();
     }
 
+    public FrontendResource createWidgetFromResources(Long organizationId, String name, String userFriendlyName, String resourcePath, String endpointCode) {
+        debug("[createWidgetFromResources] {} {}", name, resourcePath);
+
+        FrontendResource widget = new FrontendResource();
+        widget.setOrganizationId(organizationId);
+        widget.setName(name);
+        widget.setUserFriendlyName(userFriendlyName);
+        widget.setType(FrontendResource.Type.HTML);
+        widget.setResourceType(FrontendResource.ResourceType.UI_COMPONENT);
+        widget.setAccessLevel(FrontendResource.AccessLevel.GLOBAL);
+        widget.setEmbeddable(true);
+        widget.setContent(ResourcesHelper.getResourceAsStringOrEmpty(resourcePath));
+        widget = repositories.unsecure.frontendResource.save(widget);
+
+        ControllerEndpoint controllerEndpoint = new ControllerEndpoint(widget.getId(), widget.getOrganizationId());
+        controllerEndpoint.setCode(endpointCode);
+        controllerEndpoint.setSubPath(StringUtils.EMPTY);
+        repositories.unsecure.controllerEndpoint.save(controllerEndpoint);
+
+        return widget;
+
+    }
+
+    public FrontendResource updateWidget(FrontendResource widget, String userFriendlyName) {
+        debug("[updateWidget]");
+        if(widget != null) {
+            widget.setUserFriendlyName(userFriendlyName);
+            widget = repositories.unsecure.frontendResource.save(widget);
+        }
+        return widget;
+    }
 }

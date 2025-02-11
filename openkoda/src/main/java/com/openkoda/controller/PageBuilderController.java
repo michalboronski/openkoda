@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2016-2023, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
+Copyright (c) 2016-2024, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation
@@ -25,6 +25,7 @@ import com.openkoda.controller.frontendresource.RestrictedFrontendResourceContro
 import com.openkoda.core.controller.generic.AbstractController;
 import com.openkoda.core.flow.Flow;
 import com.openkoda.core.flow.Tuple;
+import com.openkoda.core.form.AbstractOrganizationRelatedEntityForm;
 import com.openkoda.core.form.CRUDControllerConfiguration;
 import com.openkoda.core.helper.JsonHelper;
 import com.openkoda.core.helper.ModelEnricherInterceptor;
@@ -37,25 +38,34 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.*;
 import jakarta.validation.Valid;
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.server.RequestPath;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.ViewResolver;
 import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
 import org.springframework.web.servlet.view.RedirectView;
 import org.thymeleaf.IEngineConfiguration;
 import org.thymeleaf.TemplateEngine;
+import org.thymeleaf.context.WebContext;
 import org.thymeleaf.context.WebExpressionContext;
 import org.thymeleaf.spring6.expression.ThymeleafEvaluationContext;
 import org.thymeleaf.web.servlet.IServletWebExchange;
 import org.thymeleaf.web.servlet.JakartaServletWebApplication;
+import org.thymeleaf.web.servlet.JavaxServletWebApplication;
 
 import java.io.IOException;
+import java.lang.reflect.Method;
 import java.security.Principal;
 import java.util.*;
 
@@ -138,6 +148,8 @@ public class PageBuilderController extends AbstractController implements HasSecu
 
     public static class EmbeddedHttpServletRequest extends HttpServletRequestWrapper {
 
+        private static final Logger log = LoggerFactory.getLogger(EmbeddedHttpServletRequest.class);
+        
         /**
          * Constructs a request object wrapping the given request.
          *
@@ -150,6 +162,7 @@ public class PageBuilderController extends AbstractController implements HasSecu
 
         @Override
         public String getParameter(String name) {
+            log.debug("[getParameter] [{}]", name);
             if ("__view".equals(name)) {
                 return "embedded";
             }
@@ -330,7 +343,7 @@ public class PageBuilderController extends AbstractController implements HasSecu
     @ResponseBody
     public Object invokeUrls(@PathVariable(value = ORGANIZATIONID, required = false) Long organizationId,
                              @PathVariable("id") Long id,
-                             @RequestParam(required = false, defaultValue = "", name = "obj_search") String commonSearch,
+                             @RequestParam(required = false, defaultValue = "", name = TABLE_FILTER) String commonSearch,
                              @RequestParam Map<String,String> requestParams,
                              HttpServletRequest request, HttpServletResponse response) {
         String dashboardName = requestParams.get("dn");

@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2016-2023, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
+Copyright (c) 2016-2024, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation
@@ -39,12 +39,13 @@ public class FolderPathConstants {
     public static final String FRONTEND_RESOURCE_ = "frontend-resource/";
     public static final String UI_COMPONENT_ = "ui-component/";
 
-    public static final String EXPORT_PATH="src/main/resources/";
-    public static final String EXPORT_CODE_PATH_ = EXPORT_PATH + "code/";
-    public static final String EXPORT_RESOURCES_PATH_ = EXPORT_PATH + "templates/";
-    public static final String EXPORT_CONFIG_PATH_ = EXPORT_PATH + "components/";
-    public static final String EXPORT_PRIVILEGE_PATH_ = EXPORT_PATH + "privileges/";
-    public static final String EXPORT_MIGRATION_PATH_ = EXPORT_PATH + "migration/";
+    public static final String EXPORT_PATH_ = "src/main/resources/";
+    public static final String EXPORT_JAVA_CUSTOM_PATH_ = "src/main/java/custom/";
+    public static final String EXPORT_CODE_PATH_ = EXPORT_PATH_ + "code/";
+    public static final String EXPORT_RESOURCES_PATH_ = EXPORT_PATH_ + "templates/";
+    public static final String EXPORT_CONFIG_PATH_ = EXPORT_PATH_ + "components/";
+    public static final String EXPORT_PRIVILEGE_PATH_ = EXPORT_PATH_ + "privileges/";
+    public static final String EXPORT_MIGRATION_PATH_ = EXPORT_PATH_ + "migration/";
 
     public static final String SUBDIR_ORGANIZATION_PREFIX = "org_";
 

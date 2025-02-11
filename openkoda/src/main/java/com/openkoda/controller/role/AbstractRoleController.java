@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2016-2023, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
+Copyright (c) 2016-2024, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation
@@ -26,6 +26,8 @@ import com.openkoda.core.controller.generic.AbstractController;
 import com.openkoda.core.flow.Flow;
 import com.openkoda.core.flow.PageModelMap;
 import com.openkoda.core.helper.PrivilegeHelper;
+import com.openkoda.dto.user.RoleDto;
+import com.openkoda.form.FrontendMappingDefinitions;
 import com.openkoda.form.RoleForm;
 import com.openkoda.model.PrivilegeBase;
 import com.openkoda.model.Role;
@@ -98,7 +100,12 @@ public class AbstractRoleController extends AbstractController {
         return Flow.init(roleForm, roleFormData)
                 .thenSet(rolesEnum, a -> PrivilegeHelper.allEnumsToList())
                 .then(a -> repositories.unsecure.role.findOne(roleId))
-                .then(a -> services.validation.validateAndPopulateToEntity(roleFormData, br,a.result))
+                .then(a -> {
+                    RoleDto editDto = roleFormData.dto;
+                    editDto.setEdit(true);
+                    RoleForm editForm = new RoleForm(editDto, a.result, FrontendMappingDefinitions.roleForm);
+                    return services.validation.validateAndPopulateToEntity(editForm, br,a.result);
+                })
                 .thenSet(roleEntity, a -> repositories.unsecure.role.save(a.result))
                 .then(a -> services.privilege.notifyOnPrivilagesChange())
                 .execute();

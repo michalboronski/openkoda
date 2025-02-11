@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2016-2023, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
+Copyright (c) 2016-2024, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation
@@ -61,7 +61,7 @@ public class SuccessAuthenticationListener implements ApplicationListener<Authen
             user.ifPresent(u -> {
                 u.setLastLogin(LocalDateTime.now());
                 userRepository.save(u);
-                eventService.emitEvent(USER_LOGGED_IN, u.getBasicUser());
+                eventService.emitEvent(USER_LOGGED_IN, u.getBasicUserDto());
             });
         }
     }

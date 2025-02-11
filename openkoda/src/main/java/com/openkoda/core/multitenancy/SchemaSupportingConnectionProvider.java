@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2016-2023, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
+Copyright (c) 2016-2024, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation
@@ -22,7 +22,11 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 package com.openkoda.core.multitenancy;
 
 import com.openkoda.core.helper.ReadableCode;
+import com.openkoda.core.security.OrganizationUser;
+import jakarta.annotation.PostConstruct;
 import org.hibernate.engine.jdbc.connections.internal.DatasourceConnectionProviderImpl;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -30,21 +34,39 @@ import java.sql.SQLException;
 /**
  * Connection provider useful for simplified single database, multiple schema multitenancy deployment.
  * Will work also in single database, single schema scenario
+ * https://stackoverflow.com/questions/50589871/postgresql-row-level-security-with-session-variable
  */
+@Component
 public class SchemaSupportingConnectionProvider extends DatasourceConnectionProviderImpl implements ReadableCode {
+
+    private static String username;
+    private static String multitenancyUsername;
+    @Value("${spring.datasource.username}")
+    private String settingsUsername;
+    @Value("${multitenancy.postgres.role.name}")
+    private String settingsMultitenancyUsername;
+
+    @PostConstruct void init() {
+        username = settingsUsername;
+        multitenancyUsername = settingsMultitenancyUsername;
+    }
 
     @Override
     public Connection getConnection() throws SQLException {
         TenantResolver.TenantedResource tr = TenantResolver.getTenantedResource();
         Connection c = super.getConnection();
-        String setSearchPathStatement = String.format("set search_path to org_%d,public", tr.organizationId);
+        boolean isMultitenancy = tr.organizationId != null;
+        long orgId = isMultitenancy ? tr.organizationId : OrganizationUser.nonExistingOrganizationId;
+        String roleChange = username == null || multitenancyUsername == null ? "" : "set role " + (isMultitenancy ? multitenancyUsername : username) + ";";
+        String setSearchPathStatement = String.format("%s set search_path to org_%d,public; set openkoda.org_id = %d;", roleChange, tr.organizationId, orgId);
         c.prepareStatement(setSearchPathStatement).execute();
         return c;
     }
 
     @Override
     public void closeConnection(Connection conn) throws SQLException {
-        conn.prepareStatement("set search_path to public").execute();
+        String roleChange = username == null ? "" : "reset role;";
+        conn.prepareStatement(String.format("%s; set search_path to public; set openkoda.org_id = " + OrganizationUser.nonExistingOrganizationId + ";", roleChange)).execute();
         super.closeConnection(conn);
     }
 

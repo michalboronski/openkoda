@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2016-2023, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
+Copyright (c) 2016-2024, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation
@@ -30,6 +30,7 @@ import com.openkoda.core.flow.PageAttr;
 import com.openkoda.core.form.CRUDControllerConfiguration;
 import com.openkoda.core.form.FrontendMappingDefinition;
 import com.openkoda.core.form.ReflectionBasedEntityForm;
+import com.openkoda.core.helper.NameHelper;
 import com.openkoda.core.helper.SpringProfilesHelper;
 import com.openkoda.core.lifecycle.BaseDatabaseInitializer;
 import com.openkoda.core.lifecycle.SearchViewCreator;
@@ -363,14 +364,13 @@ public class BasicCustomisationService extends ComponentProvider implements Cust
 
     @Override
     public synchronized void registerFrontendMapping(FrontendMappingDefinition definition, ScopedSecureRepository repository) {
-
-        String uniqueName = definition.name;
+        String uniqueName = NameHelper.toEntityKey(definition.name);
         frontendMappingMap.put(uniqueName, new FrontendMapping(definition, repository));
     }
 
     @Override
     public void unregisterFrontendMapping(String name) {
-        frontendMappingMap.remove(name);
+        frontendMappingMap.remove(NameHelper.toEntityKey(name));
     }
 
     @Override

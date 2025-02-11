@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2016-2023, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
+Copyright (c) 2016-2024, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation
@@ -22,17 +22,30 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 package com.openkoda.service.export.converter.impl;
 
 import com.openkoda.controller.ComponentProvider;
+import com.openkoda.model.component.FrontendResource;
 import com.openkoda.model.component.ServerJs;
+import com.openkoda.service.export.ClasspathComponentImportService;
 import com.openkoda.service.export.converter.YamlToEntityConverter;
 import com.openkoda.service.export.converter.YamlToEntityParentConverter;
+import com.openkoda.service.export.dto.FrontendResourceConversionDto;
 import com.openkoda.service.export.dto.ServerJsConversionDto;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Example;
 import org.springframework.stereotype.Component;
 
 import java.util.Map;
+import java.util.Optional;
+
+import static com.openkoda.service.export.ClasspathComponentImportService.SyncStatus.*;
+        //booleany psują bo zawsze mają wartość
 
 @Component
 @YamlToEntityParentConverter(dtoClass = ServerJsConversionDto.class)
 public class ServerJsYamlToEntityConverter extends ComponentProvider implements YamlToEntityConverter<ServerJs, ServerJsConversionDto> {
+
+    @Value("${components.export.syncWithFilesystem:false}")
+    private boolean syncWithFilesystem;
 
     @Override
     public ServerJs convertAndSave(ServerJsConversionDto dto, String filePath) {
@@ -56,10 +69,39 @@ public class ServerJsYamlToEntityConverter extends ComponentProvider implements 
             serverJs = new ServerJs();
             serverJs.setName(dto.getName());
         }
+        serverJs.setDescription(dto.getDescription());
         serverJs.setArguments(dto.getArguments());
         serverJs.setModel(dto.getModel());
         serverJs.setModuleName(dto.getModule());
         serverJs.setOrganizationId(dto.getOrganizationId());
         return serverJs;
     }
+
+    @Override
+    public boolean hasContent() {
+        return true;
+    }
+
+    public ClasspathComponentImportService.SyncStatus checkSyncStatus(ServerJsConversionDto dto) {
+        ServerJs s = repositories.unsecure.serverJs.findByName(dto.getName());
+
+        if (s == null) {
+            return NEW;
+        }
+
+        boolean same = true;
+
+        same &= StringUtils.equals(String.valueOf(s.getDescription()), String.valueOf(dto.getDescription()));
+        same &= StringUtils.equals(String.valueOf(s.getArguments()), String.valueOf(dto.getArguments()));
+        same &= StringUtils.equals(String.valueOf(s.getModel()), String.valueOf(dto.getModel()));
+        if (same) {
+            String code = loadResourceAsString(dto.getCode());
+            same = StringUtils.equals(code, s.getCode());
+        }
+        return same ? UNCHANGED : MODIFIED;
+    }
+
+
+
+
 }

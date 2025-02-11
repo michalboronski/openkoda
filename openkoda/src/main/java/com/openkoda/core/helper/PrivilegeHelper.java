@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2016-2023, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
+Copyright (c) 2016-2024, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation
@@ -117,8 +117,7 @@ public class PrivilegeHelper implements HasSecurityRules, AttributeConverter<Pri
         return streamSplitAndRemoveParenthesis(joinedPrivileges).collect(Collectors.toUnmodifiableSet());
     }
 
-    //TODO: this method is handy not only for privileges, move to some more general helper
-    public static Stream<String> streamSplitAndRemoveParenthesis(String joinedPrivileges) {
+    private static Stream<String> streamSplitAndRemoveParenthesis(String joinedPrivileges) {
         return Arrays.stream(splitAndRemoveParenthesis(joinedPrivileges));
     }
 
@@ -199,11 +198,6 @@ public class PrivilegeHelper implements HasSecurityRules, AttributeConverter<Pri
         return privileges;
     }
 
-    // TODO : can be removed?
-    public static Map<String, PrivilegeBase> getNameToEnum() {
-        return nameToEnum;
-    }
-
     public static List<PrivilegeBase> getAllNonHiddenEnumPrivileges() {
         if (allNonHiddenEnumPrivileges == null) {
             allNonHiddenEnumPrivileges = nameToEnum.values().stream().filter( p -> !p.isHidden()).sorted( (p1, p2) -> p1.getId().compareTo(p2.getId()) ).toList();
@@ -232,25 +226,6 @@ public class PrivilegeHelper implements HasSecurityRules, AttributeConverter<Pri
 
     public static PrivilegeBase[] allEnumsAsPrivilegeBase() {
         return allEnumsAsPrivilegeBaseList().toArray(PrivilegeBase[]::new);
-    }
-
-    // TODO : is that used at all? can be removed?
-    /**
-     * @return map of all enums as privilege base linked map
-     */
-    public static Map<PrivilegeBase, String> allEnumsAsPrivilegeBaseLinkedMap() {
-        TreeMap<PrivilegeBase, String> result = new TreeMap<>(Comparator.comparing(PrivilegeBase::name));
-        for (Map.Entry<String, PrivilegeBase> e: nameToEnum.entrySet()) {
-            PrivilegeBase pb = e.getValue();
-            if (pb.isHidden()) { continue; }
-            result.put(pb, pb.getLabel());
-        }
-        
-        if(getInstance().privilegeService != null) {
-            getInstance().privilegeService.findAll().forEach( pb -> result.put(pb, pb.name()));
-        }
-        
-        return result;
     }
 
     public static String allEnumsAsPrivilegeBaseJsonString(boolean concatLabel) throws JSONException {
@@ -282,13 +257,16 @@ public class PrivilegeHelper implements HasSecurityRules, AttributeConverter<Pri
         }
 
         JSONArray results = new JSONArray();
-        privilegeListToJson(results, getAllEnumPrivileges(), concatLabel);
-        privilegeListToJson(results, dynamicPrivileges, concatLabel);
+        List<PrivilegeBase> allPrivileges = Stream.concat(getAllEnumPrivileges().stream(),
+                dynamicPrivileges.stream().map(dynamicPrivilege -> (PrivilegeBase) dynamicPrivilege)).collect(toList());
+        privilegeListToJson(results, allPrivileges, concatLabel);
+//        privilegeListToJson(results, dynamicPrivileges, concatLabel);
         return results.toString();
     }
     
     private JSONArray privilegeListToJson(JSONArray results, List<? extends PrivilegeBase> privileges, boolean concatLabel) throws JSONException {
         JSONObject result;
+        List<JSONObject> jsonObjects = new ArrayList<>();
         for (PrivilegeBase pb : privileges) {
             result = new JSONObject();
             result.put("k", pb.name());
@@ -302,9 +280,16 @@ public class PrivilegeHelper implements HasSecurityRules, AttributeConverter<Pri
                 result.put("v", (pb.getGroup() != null ? pb.getGroup().getLabel() : pb.getCategory()) + ": " + pb.getLabel());
             }
             result.put("hidden", String.valueOf(pb.isHidden()));
-            results.put(result);
+            jsonObjects.add(result);
         }
-        
+        Stream<JSONObject> sorted = jsonObjects.stream().sorted(Comparator.comparing((JSONObject o) -> {
+            try {
+                return ((String) o.get("v"));
+            } catch (JSONException e) {
+                throw new RuntimeException(e);
+            }
+        }));
+        sorted.forEach(results::put);
         return results;
     }
 

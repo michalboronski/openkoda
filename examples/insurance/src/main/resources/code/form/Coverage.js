@@ -1,0 +1,5 @@
+a => a.number("coverageId")
+                    .datalist("coverageTypes", d => d.toLinkedMap(["LIFE", "HEALTH", "AUTO", "PROPERTY", "TRAVEL"]))
+                    .dropdown("coverageType", "coverageTypes")
+                    .text("coverageDescription")
+                    .number("coverageAmount")

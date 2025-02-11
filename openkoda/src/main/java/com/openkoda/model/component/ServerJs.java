@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2016-2023, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
+Copyright (c) 2016-2024, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated 
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation 
@@ -21,7 +21,6 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 package com.openkoda.model.component;
 
-import com.openkoda.controller.common.PageAttributes;
 import com.openkoda.core.flow.PageModelMap;
 import com.openkoda.core.helper.JsonHelper;
 import com.openkoda.model.PrivilegeNames;
@@ -29,11 +28,9 @@ import com.openkoda.model.common.ComponentEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
-import org.apache.commons.lang3.StringUtils;
 import org.hibernate.annotations.Formula;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
@@ -46,6 +43,9 @@ public class ServerJs extends ComponentEntity {
 
     @Column
     private String name;
+
+    @Column(length = 1000)
+    private String description;
 
     @Column(length = 65536 * 4)
     private String code;
@@ -91,12 +91,7 @@ public class ServerJs extends ComponentEntity {
 
     //TODO: move this logic to some helper class
     public PageModelMap getModelMap() throws IOException {
-        PageModelMap result = JsonHelper.fromDebugJson(this.model);
-        result.put(PageAttributes.arguments,
-            StringUtils.isBlank(this.arguments) ?
-                new ArrayList<>() :
-                Arrays.asList(StringUtils.split(this.arguments, "\n")));
-        return result;
+        return JsonHelper.fromDebugJson(this.model);
     }
 
     public void setName(String name) {
@@ -138,4 +133,20 @@ public class ServerJs extends ComponentEntity {
     public Collection<String> contentProperties() {
         return contentProperties;
     }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+
+    public ServerJs(Long organizationId, String moduleName, String name) {
+        super(organizationId);
+        this.name = name;
+        this.moduleName = moduleName;
+    }
+
 }

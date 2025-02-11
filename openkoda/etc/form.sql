@@ -18,6 +18,7 @@ create table form
     read_privilege varchar(255),
     register_api_crud_controller boolean not null,
     register_html_crud_controller boolean not null,
+    show_on_organization_dashboard boolean not null,
     table_columns varchar(255),
     write_privilege varchar(255)
 );

@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2016-2023, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
+Copyright (c) 2016-2024, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation
@@ -49,7 +49,7 @@ public class FrontendResourceEntityToYamlConverter extends AbstractEntityToYamlC
 
     @Override
     public FrontendResourceConversionDto addToZip(FrontendResource entity, ZipOutputStream zipOut, Set<String> zipEntries){
-         List<ControllerEndpoint> controllerEndpoints = controllerEndpointRepository.findByFrontendResourceId(entity.getId());
+         List<ControllerEndpoint> controllerEndpoints = controllerEndpointRepository.findByFrontendResourceIdOrderById(entity.getId());
          for(ControllerEndpoint ce : controllerEndpoints){
              controllerEndpointEntityToYamlConverter.addToZip(ce, zipOut, zipEntries);
          }
@@ -74,7 +74,7 @@ public class FrontendResourceEntityToYamlConverter extends AbstractEntityToYamlC
     @Override
     public FrontendResourceConversionDto getConversionDto(FrontendResource entity) {
         FrontendResourceConversionDto dto = populateDto(entity);
-        List<ControllerEndpointConversionDto> controllerEndpointDtos = controllerEndpointRepository.findByFrontendResourceId(entity.getId()).stream()
+        List<ControllerEndpointConversionDto> controllerEndpointDtos = controllerEndpointRepository.findByFrontendResourceIdOrderById(entity.getId()).stream()
                 .map(controllerEndpoint -> controllerEndpointEntityToYamlConverter.getConversionDto(controllerEndpoint))
                 .collect(Collectors.toList());
         dto.setControllerEndpoints(controllerEndpointDtos);
@@ -91,6 +91,7 @@ public class FrontendResourceEntityToYamlConverter extends AbstractEntityToYamlC
         dto.setContent(getResourcePathToContentFile(entity));
         dto.setIncludeInSitemap(entity.getIncludeInSitemap());
         dto.setName(entity.getName());
+        dto.setUserFriendlyName(entity.getUserFriendlyName());
         dto.setAccessLevel(entity.getAccessLevel());
         dto.setRequiredPrivilege(entity.getRequiredPrivilege());
         dto.setType(entity.getType().name());

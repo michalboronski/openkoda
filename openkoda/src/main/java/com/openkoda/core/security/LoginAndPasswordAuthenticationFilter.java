@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2016-2023, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
+Copyright (c) 2016-2024, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation
@@ -47,7 +47,7 @@ public class LoginAndPasswordAuthenticationFilter extends UsernamePasswordAuthen
     public LoginAndPasswordAuthenticationFilter(
             @Value("${page.after.auth.for.multiple.organizations:/html/organization/all}")
                     String pageAfterAuthForMultipleOrganizations,
-            @Value("${page.after.auth.for.one.organization:/html/organization/%s/settings}")
+            @Value("${page.after.auth.for.one.organization:/html/organization/%s/dashboard}")
                     String pageAfterAuthForOneOrganization,
             @Value("${page.after.auth.for.global.admin:/html/dashboard}")
                     String pageAfterAuthForGlobalAdmin,

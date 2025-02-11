@@ -7,3 +7,4 @@ registerApiCrudController: true
 registerHtmlCrudController: true
 tableColumns: "name,accountId"
 code: "code/form/project.js"
+module: "timelog"

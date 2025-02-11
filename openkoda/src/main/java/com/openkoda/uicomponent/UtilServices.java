@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2016-2023, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
+Copyright (c) 2016-2024, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation
@@ -30,10 +30,14 @@ import org.apache.commons.codec.digest.DigestUtils;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.springframework.expression.ExpressionParser;
+import org.springframework.expression.spel.standard.SpelExpressionParser;
+import org.springframework.expression.spel.support.StandardEvaluationContext;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.math.BigDecimal;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -43,6 +47,10 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.Arrays;
 import java.util.List;
+
+import static com.google.common.base.CaseFormat.LOWER_CAMEL;
+import static com.google.common.base.CaseFormat.UPPER_CAMEL;
+import static org.apache.commons.lang3.StringUtils.substringBefore;
 
 @Component
 public class UtilServices implements LoggingComponent {
@@ -65,6 +73,10 @@ public class UtilServices implements LoggingComponent {
     @Autocomplete(doc="Parse string to long")
     public long parseLong(String s) {
         return Long.parseLong(s);
+    }
+    @Autocomplete(doc="Parse string to Decimal (BigDecimal)")
+    public BigDecimal parseDecimal(String s) {
+        return new BigDecimal(s);
     }
     @Autocomplete(doc="Parse date string to date object")
     public LocalDate parseDate(String s) {
@@ -128,5 +140,19 @@ public class UtilServices implements LoggingComponent {
     @Autocomplete(doc="Compute MD5 hash of string")
     public String md5(String value) {
         return DigestUtils.md5Hex(value);
+    }
+    @Autocomplete(doc="Do document template condition evaluation")
+    public Boolean doEvaluateToBoolean(Object evaluationSubject, String condition) {
+        // blank condition is considered as always allowed
+        if (condition == null || condition.isBlank()) return true;
+
+        String className = substringBefore(evaluationSubject.getClass().getSimpleName(), "_");
+        String referenceName = UPPER_CAMEL.to(LOWER_CAMEL, className);
+        String contextAwareCondition = condition.replaceAll(referenceName+".", "#this.");
+
+        ExpressionParser parser = new SpelExpressionParser();
+        StandardEvaluationContext context = new StandardEvaluationContext(evaluationSubject);
+
+        return parser.parseExpression(contextAwareCondition).getValue(context, Boolean.class);
     }
 }

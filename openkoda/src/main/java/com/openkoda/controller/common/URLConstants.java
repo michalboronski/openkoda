@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2016-2023, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
+Copyright (c) 2016-2024, Openkoda CDX Sp. z o.o. Sp. K. <openkoda.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated 
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation 
@@ -90,6 +90,8 @@ public interface URLConstants {
     String PROFILE = "profile";
     String MEMBER = "member";
     String FILE = "file";
+    String DOCUMENT = "document";
+    String TEMPLATE = "template";
     String HISTORY = "history";
     String EVENTS = "events";
     String ADMIN = "admin";
@@ -102,11 +104,11 @@ public interface URLConstants {
     String FRONTENDRESOURCE = "frontendresource";
     String _FRONTENDRESOURCE = "/" + FRONTENDRESOURCE;
 
-    String UI_COMPONENT = "uiComponent";
+    String UI_COMPONENT = "uicomponent";
     String _UI_COMPONENT = "/" + UI_COMPONENT;
-    String WEBENDPOINT = "webEndpoint";
-    String PAGEBUILDER = "pageBuilder";
-    String CONTROLLER_ENDPOINT = "controllerEndpoint";
+    String WEBENDPOINT = "webendpoint";
+    String PAGEBUILDER = "pagebuilder";
+    String CONTROLLER_ENDPOINT = "controllerendpoint";
     String SERVERJS = "serverjs";
     String ROLE = "role";
     String PRIVILEGE = "privilege";
@@ -114,8 +116,8 @@ public interface URLConstants {
     String MODULE = "module";
     String CONTENT = "content";
     String TYPE = "type";
-    String EVENTLISTENER = "eventListener";
-    String CUSTOM_EVENT = "customEvent";
+    String EVENTLISTENER = "eventlistener";
+    String CUSTOM_EVENT = "customevent";
     String SCHEDULER = "scheduler";
     String SPOOF = "spoof";
     String ENTITY = "entity";
@@ -141,7 +143,10 @@ public interface URLConstants {
     String _PROFILE = "/" + PROFILE;
     String _MEMBER = "/" + MEMBER;
     String _FILE = "/" + FILE;
+    String _DOCUMENT = "/" + DOCUMENT;
+    String _TEMPLATE = "/" + TEMPLATE;
     String _WEBENDPOINT = "/" + WEBENDPOINT;
+    String _CE = "/ce";
     String _PAGEBUILDER = "/" + PAGEBUILDER;
     String _SERVERJS = "/" + SERVERJS;
     String _ORGANIZATION = "/" + ORGANIZATION;
@@ -160,6 +165,7 @@ public interface URLConstants {
     String _PRIVILEGE = "/" + PRIVILEGE;
     String _CONTENT = "/" + CONTENT;
     String _UPLOAD = "/upload";
+    String _REUPLOAD = "/reupload";
     String _EVENTLISTENER = "/" + EVENTLISTENER;
     String _CUSTOM_EVENT = "/" + CUSTOM_EVENT;
     //String _CREATE_EVENT = "/" + CREATE_EVENT;
@@ -218,6 +224,7 @@ public interface URLConstants {
 
     String FRONTENDRESOURCEREGEX = "[0-9a-zA-Z\\-\\/]*\\@?(?:\\.css|\\.js|\\.xml|\\.txt|\\.csv|\\.json|\\.html)?";
     String FRONTENDRESOURCE_ORGID_PARAM_REGEX = "(?:\\?organizationId=?.*)?";
+    String FRONTENDRESOURCE_PARAMS_REGEX = "(\\?([0-9a-zA-Z]+[=][ 0-9a-zA-Z]+(\\&)?)*)?";
     String EMAILRESOURCE_DISCRIMINATOR = "@";
 
     String FRONTENDRESOURCE_AUTH_PARAMS_REGEX = "(\\?(.*=?.*)?(\\&.*=?.*)?)?";
@@ -228,7 +235,7 @@ public interface URLConstants {
     String IP_COMMA_SEPARATED_LIST = "(((([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\\/([4-9]|[12][0-9]|3[0-2]))?)([,]|$))*";
     String LOWERCASE_NUMERIC_UNDERSCORE_REGEXP = "[a-z0-9_]+$";
 
-    String DEBUG_MODEL = "debugModel";
+    String DEBUG_MODE = "_debugMode";
     String DRAFT = "draft";
     String _DRAFT = "/" + DRAFT;
     String COPY = "copy";
@@ -256,7 +263,8 @@ public interface URLConstants {
     String _API_V1 = _API + _V1;
     String _API_V1_ANT_EXPRESSION = _API_V1 + "/**";
     String _API_V1_ORGANIZATION = _API_V1 + _ORGANIZATION;
-
+    String _API_V1_ORGANIZATION_ORGANIZATIONID = _API_V1_ORGANIZATION + _ORGANIZATIONID;
+    
     String _API_V2 = _API + _V2;
     String _API_V2_ANT_EXPRESSION = _API_V2 + "/**";
     String _API_V2_ORGANIZATION = _API_V2 + _ORGANIZATION;
@@ -277,7 +285,7 @@ public interface URLConstants {
     String CN = "cn";
     String _CN = "/" + CN;
     
-    String FILE_ASSET = "/file-asset-";
+    String _FILE_ASSET = "/file-asset-";
     String AI = "ai";
     String _AI = "/" + AI;
     String PROMPT = "prompt";
@@ -290,4 +298,9 @@ public interface URLConstants {
     String QUERY_REPORT = "queryreport";
     String _QUERY_REPORT = "/" + QUERY_REPORT;
 
+    String PLACEHOLDER = "placeholder";
+    String _PLACEHOLDER = "/" + PLACEHOLDER;
+
+    String BUSINESS_PARAMETER = "businessParameter";
+    String TABLE_FILTER = "table_filter";
 }
